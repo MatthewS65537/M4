@@ -20,7 +20,7 @@ class TextHead(nn.Module):
 
 class ImgHead(nn.Module):
     def __init__(self, input_dim=500, output_dim=1024, hidden_dim=1024, num_layers=2):
-        super(ImageHead, self).__init__()
+        super(ImgHead, self).__init__()
         self.hidden_layers = nn.ModuleList()
         self.hidden_layers.append(nn.Linear(input_dim, hidden_dim))
         for i in range(num_layers - 1):
@@ -37,10 +37,10 @@ class ImgHead(nn.Module):
         sz = x.shape
         # Pool all in single batch together
         # Here, each batch has 128 signals corresponding to 128 channels
-        pooler = torch.zeros(sz[:-2] + sz[-1])
+        pooler = torch.zeros(sz[:-2] + tuple([sz[-1]]))
         # Iterate through items in batch
         for i in range(sz[-2]):
-            pooler += x[:][i][:]
+            pooler += x[:,i,:]
         pooler /= sz[-2]
         return pooler
 
