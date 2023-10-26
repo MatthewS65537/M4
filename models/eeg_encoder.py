@@ -49,7 +49,7 @@ class EEGEncoder(nn.Module):
         super(EEGEncoder, self).__init__()
 
         self.txt_head = TextHead(input_dim=txt_in_feat, output_dim=enc_feat)
-        self.img_head = nn.Linear(img_in_feat, enc_feat)
+        self.img_head = ImgHead(input_dim=img_in_feat, output_dim=enc_feat)
 
         self.encoder_layer = nn.TransformerEncoderLayer(d_model=enc_feat, nhead=enc_nhead, dim_feedforward=enc_dim_ff, batch_first=True)
         self.encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=num_enc_layers)
