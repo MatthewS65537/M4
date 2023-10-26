@@ -18,6 +18,8 @@ class TextHead(nn.Module):
         x = self.activation(self.output_layer(x))
         return x
 
+# class ImgHead(nn.Module):
+
 class EEGEncoder(nn.Module):
     def __init__(self, txt_in_feat=840, img_in_feat=500, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8):
         super(EEGEncoder, self).__init__()
