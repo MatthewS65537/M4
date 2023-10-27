@@ -12,15 +12,15 @@ class ImageNetDataloader():
 		self.drop_last = drop_last
 		self.reset = False
 
-	def load_data():
-		self.ptr += bsz
-		if (self.ptr > (dataset_size // bsz * bsz) and drop_last) or (self.ptr > dataset_size and not drop_last):
+	def load_data(self):
+		self.ptr += self.bsz
+		if (self.ptr > (self.dataset_size // self.bsz * self.bsz) and self.drop_last) or (self.ptr > self.dataset_size and not self.drop_last):
 			self.reset = True
-		target = [img_dict[labeled_eeg["labels"][i]] for i in range(ptr - 64, min(ptr, dataset_size))]
-		sz = min(ptr, dataset_size) - (ptr - 64)
-		return {"data" : self.labeled_eeg["eeg"][ptr-bsz:min(ptr, dataset_size)], "target" : target, "size" : sz}
+		target = [self.image_net_dict[self.labeled_eeg["labels"][i]] for i in range(self.ptr - 64, min(self.ptr, self.dataset_size))]
+		sz = min(self.ptr, self.dataset_size) - (self.ptr - 64)
+		return {"data" : self.labeled_eeg["eeg"][self.ptr-self.bsz:min(self.ptr, self.dataset_size)], "target" : target, "size" : sz}
 
-	def reset():
+	def reset(self):
 		if self.reset:
 			self.reset = False
 			self.ptr = 0
@@ -34,20 +34,21 @@ class ZuCoDataloader():
 		super(ImageNetDataloader, self).__init__()
 		self.eeg_dataloader = DataLoader(data, batch_size=bsz, shuffle=False, drop_last=drop_last)
 		self.embeds_dataloader = DataLoader(targets, batch_size=bsz, shuffle=False, drop_last=drop_last)
-		self.eeg_iter = iter(eeg_dataloader)
-		self.embeds_iter = iter(embeds_dataloader)
-		self.ptr = 0
-		self.bsz = bsz
-		self.data = 
+		self.eeg_iter = iter(self.eeg_dataloader)
+		self.embeds_iter = iter(self.embeds_dataloader)
+		self.reset = False
 
-	def load_data():
-		eeg = next(eeg_iter)
-		embed = next(embeds_iter)[:,0,:,:]
-		ptr += bsz
+	def load_data(self):
+		try:
+			eeg = next(self.eeg_iter)
+			embed = next(self.embeds_iter)[:,0,:,:]
 
-		return {"data" : eeg, "target" : embed, "size" : embed.shape[0]}
+			return {"data" : eeg, "target" : embed, "size" : embed.shape[0]}
+		except StopIteration:
+			self.reset()
+			self.load_data()
 
 
-	def reset():
-		self.eeg_iter = iter(eeg_dataloader)
-		self.embeds_iter = iter(embeds_dataloader)
+	def reset(self):
+		self.eeg_iter = iter(self.eeg_dataloader)
+		self.embeds_iter = iter(self.embeds_dataloader)
