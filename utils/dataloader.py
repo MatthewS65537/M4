@@ -10,33 +10,30 @@ class ImageNetDataloader():
 		self.ptr = 0
 		self.dataset_size = len(labeled_eeg["labels"])
 		self.drop_last = drop_last
-		self.reset = False
+		self.is_reset = False
 
 	def load_data(self):
 		self.ptr += self.bsz
 		if (self.ptr > (self.dataset_size // self.bsz * self.bsz) and self.drop_last) or (self.ptr > self.dataset_size and not self.drop_last):
-			self.reset = True
+			self.is_reset = True
 		target = [self.image_net_dict[self.labeled_eeg["labels"][i]] for i in range(self.ptr - 64, min(self.ptr, self.dataset_size))]
 		sz = min(self.ptr, self.dataset_size) - (self.ptr - 64)
 		return {"data" : self.labeled_eeg["eeg"][self.ptr-self.bsz:min(self.ptr, self.dataset_size)], "target" : target, "size" : sz}
 
 	def reset(self):
-		if self.reset:
-			self.reset = False
+		if self.is_reset:
+			self.is_reset = False
 			self.ptr = 0
 			return True
 		return False
 
-
-
 class ZuCoDataloader():
 	def __init__(self, data, targets, bsz=64, drop_last = True):
-		super(ImageNetDataloader, self).__init__()
+		super(ZuCoDataloader, self).__init__()
 		self.eeg_dataloader = DataLoader(data, batch_size=bsz, shuffle=False, drop_last=drop_last)
 		self.embeds_dataloader = DataLoader(targets, batch_size=bsz, shuffle=False, drop_last=drop_last)
 		self.eeg_iter = iter(self.eeg_dataloader)
 		self.embeds_iter = iter(self.embeds_dataloader)
-		self.reset = False
 
 	def load_data(self):
 		try:
@@ -47,8 +44,7 @@ class ZuCoDataloader():
 		except StopIteration:
 			self.reset()
 			self.load_data()
-
-
+			return "RESET"
 	def reset(self):
 		self.eeg_iter = iter(self.eeg_dataloader)
 		self.embeds_iter = iter(self.embeds_dataloader)
