@@ -28,23 +28,24 @@ class ImageNetDataloader():
 		return False
 
 class ZuCoDataloader():
-	def __init__(self, data, targets, bsz=64, drop_last = True):
+	def __init__(self, data, targets, bsz=64, drop_last=True):
 		super(ZuCoDataloader, self).__init__()
 		self.eeg_dataloader = DataLoader(data, batch_size=bsz, shuffle=False, drop_last=drop_last)
 		self.embeds_dataloader = DataLoader(targets, batch_size=bsz, shuffle=False, drop_last=drop_last)
 		self.eeg_iter = iter(self.eeg_dataloader)
 		self.embeds_iter = iter(self.embeds_dataloader)
+		self.is_reset = False
 
-	def load_data(self):
+	def load_data(self, just_reset = False):
 		try:
 			eeg = next(self.eeg_iter)
 			embed = next(self.embeds_iter)[:,0,:,:]
 
-			return {"data" : eeg, "target" : embed, "size" : embed.shape[0]}
+			return {"data" : eeg, "target" : embed, "size" : embed.shape[0], "reset" : just_reset}
 		except StopIteration:
 			self.reset()
-			self.load_data()
-			return "RESET"
+			return self.load_data(just_reset=True)
+
 	def reset(self):
 		self.eeg_iter = iter(self.eeg_dataloader)
 		self.embeds_iter = iter(self.embeds_dataloader)
