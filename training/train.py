@@ -31,44 +31,47 @@ optimizer = optim.Adam(eeg_enc.parameters(), lr=learning_rate)
 
 epoch_num = 0
 while dsg_tasks.should_keep_training():
-	epoch_num += 1
-	for task in dsg_tasks:
-		if task.should_keep_training():
-			cur_loss = 0.0
-			tot_cnt = 0
-			if task.name == "EEG-TXT":
-				zuco_data = zuco_dataloader.load_data()
-				while not zuco_data["reset"]:
-					input_embeddings, seq_len, input_masks, input_mask_invert, target_ids, target_mask, sentiment_labels, sent_level_EEG = zuco_data["data"]
-					res = eeg_enc("TXT", input_embeddings.to(device).float(), input_masks.to(device), input_mask_invert.to(device))
-					embed = zuco_data["embed"]
+    epoch_num += 1
+    for task in dsg_tasks:
+        if task.should_keep_training():
+            cur_loss = 0.0
+            tot_cnt = 0
+            if task.name == "EEG-TXT":
+                zuco_data = zuco_dataloader.load_data()
+                while not zuco_data["reset"]:
+                    input_embeddings, seq_len, input_masks, input_mask_invert, target_ids, target_mask, sentiment_labels, sent_level_EEG = zuco_data["data"]
+                    res = eeg_enc("TXT", input_embeddings.to(device).float(), input_masks.to(device), input_mask_invert.to(device))
+                    embed = zuco_data["embed"]
 
-					loss = criterion(res.to(device).float().view(embed.shape[0] * 77, 768), embed.to(device).float().view(embed.shape[0] * 77, 768), torch.ones(embed.shape[0] * 77).to(device))
+                    loss = criterion(res.to(device).float().view(embed.shape[0] * 77, 768), embed.to(device).float().view(embed.shape[0] * 77, 768), torch.ones(embed.shape[0] * 77).to(device))
 
-					optimizer.zero_grad()
-				    loss.backward()
-				    optimizer.step()
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
 
-				    cur_loss += loss.item()
-				    tot_cnt += zuco_data["size"]
-				    zuco_data = zuco_dataloader.load_data()
+                    cur_loss += loss.item()
+                    tot_cnt += zuco_data["size"]
+                    zuco_data = zuco_dataloader.load_data()
 
-			if task.name == "EEG-IMG":
-				image_net_data = image_net_dataloader.load_data()
-				while not image_net_data.reset():
-					input_data_batched = image_net_data["data"]
-					target_batched = image_net_data["target"]
+            elif task.name == "EEG-IMG":
+                image_net_data = image_net_dataloader.load_data()
+                while not image_net_data.reset():
+                    input_data_batched = image_net_data["data"]
+                    target_batched = image_net_data["target"]
 
-					res = eeg_enc("IMG", input_data_batched.to(device).float(), pool_img_head=True)
-					loss = criterion(res.to(device).float().view(target_batched.shape[0], 768), target_batched.to(device).float().view(target_batched.shape[0], 768), torch.ones(target_batched.shape[0] * 77).to(device))
+                    res = eeg_enc("IMG", input_data_batched.to(device).float(), pool_img_head=True)
+                    loss = criterion(res.to(device).float().view(target_batched.shape[0], 768), target_batched.to(device).float().view(target_batched.shape[0], 768), torch.ones(target_batched.shape[0] * 77).to(device))
 
-					optimizer.zero_grad()
-				    loss.backward()
-				    optimizer.step()
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
 
-				    cur_loss += loss.item()
-					tot_cnt += image_net_data["size"]
-					image_net_data = image_net_dataloader.load_data()
-			
-			cur_loss /= tot_cnt
-			task.update(epoch_num, cur_loss)
+                    cur_loss += loss.item()
+                    tot_cnt += image_net_data["size"]
+                    image_net_data = image_net_dataloader.load_data()
+            else:
+                print("[ERROR] BAD TASK NAME. CHECK NAMING OF TASKS AND TRAINING TO ENSURE ALL TASKS HAVE CORRESPONDING TRAINING IMPLEMENTED.")
+                assert(False)
+            
+            cur_loss /= tot_cnt
+            task.update(epoch_num, cur_loss)
