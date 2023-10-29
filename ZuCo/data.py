@@ -14,7 +14,7 @@ from fuzzy_match import algorithims
 
 # macro
 ZUCO_SENTIMENT_LABELS = json.load(open('./data/ZuCo/task1-SR/sentiment_labels.json'))
-SST_SENTIMENT_LABELS = json.load(open('./data/stanfordsentiment/ternary_dataset.json'))
+SST_SENTIMENT_LABELS = json.load(open('./data/ZuCo/stanfordsentiment/ternary_dataset.json'))
 
 def normalize_1d(input_tensor):
     # normalize a 1d tensor
