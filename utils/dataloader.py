@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 
 class ImageNetDataloader():
-    def __init__(self, labeled_eeg, image_net_dict, bsz=64, drop_last = True):
+    def __init__(self, labeled_eeg, image_net_dict, bsz=1, drop_last = True):
         super(ImageNetDataloader, self).__init__()
         self.labeled_eeg = labeled_eeg
         self.image_net_dict = image_net_dict
@@ -12,12 +12,15 @@ class ImageNetDataloader():
         self.drop_last = drop_last
         self.is_reset = False
 
+        if not self.bsz == 1:
+          print("[WARNING] IMAGE NET TRAINING NOT IMPLEMENTED FOR BSZ NOT 1. PROCEED WITH CAUTION.")
+
     def load_data(self):
         self.ptr += self.bsz
         if (self.ptr > (self.dataset_size // self.bsz * self.bsz) and self.drop_last) or (self.ptr > self.dataset_size and not self.drop_last):
             self.is_reset = True
-        target = [self.image_net_dict[self.labeled_eeg["labels"][i]] for i in range(self.ptr - 64, min(self.ptr, self.dataset_size))]
-        sz = min(self.ptr, self.dataset_size) - (self.ptr - 64)
+        target = [self.image_net_dict[self.labeled_eeg["labels"][i]] for i in range(self.ptr - self.bsz, min(self.ptr, self.dataset_size))]
+        sz = min(self.ptr, self.dataset_size) - (self.ptr - self.bsz)
         return {"data" : self.labeled_eeg["eeg"][self.ptr-self.bsz:min(self.ptr, self.dataset_size)], "target" : target, "size" : sz}
 
     def reset(self):
