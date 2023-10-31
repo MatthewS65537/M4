@@ -20,11 +20,18 @@ del Brain2Image_data
 
 zuco_dataloader = ZuCoDataloader(master_eeg["dev"], master_embeds["dev"], bsz=64, drop_last=True)
 # zuco_dataloader = ZuCoDataloader(master_eeg["train"], master_embeds["train"], bsz=64, drop_last=True)
-image_net_dataloader = ImageNetDataloader(image_eeg_labels, img_net_dict, bsz=1, drop_last=True)
+# image_net_dataloader = ImageNetDataloader(image_eeg_labels, img_net_dict, bsz=1, drop_last=True)
+take_first = 50
+shortened_image_eeg_labels = {"labels" : image_eeg_labels["labels"][:take_first], "eeg" : image_eeg_labels["eeg"][:take_first]}
+image_net_dataloader = ImageNetDataloader(shortened_image_eeg_labels, img_net_dict, bsz=1, drop_last=True)
 
 dsg_tasks = DSGTasks()
-dsg_tasks.add_task(DSGTask("EEG-TXT", dataset=zuco_dataloader, converge_lim=10, div_threshold=0.01))
-dsg_tasks.add_task(DSGTask("EEG-IMG", dataset=image_net_dataloader, converge_lim=10, div_threshold=0.01))
+dsg_tasks.add_task(DSGTask("EEG-TXT", dataset=zuco_dataloader, converge_lim=5, div_threshold=0.1))
+dsg_tasks.add_task(DSGTask("EEG-IMG", dataset=image_net_dataloader, converge_lim=5, div_threshold=0.1))
+
+from torch.utils.tensorboard import SummaryWriter
+log_dir = "./logs/TrainTesting"
+writer = SummaryWriter(log_dir=log_dir)
 
 import torch
 import torch.nn as nn
@@ -32,21 +39,25 @@ import torch.optim as optim
 
 device = "cuda:0"
 
-eeg_enc = EEGEncoder(txt_in_feat=840, img_in_feat=500, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8)
+eeg_enc = EEGEncoder(txt_in_feat=840, img_in_feat=128, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8)
 eeg_enc = nn.DataParallel(eeg_enc, device_ids=[0])
 
 learning_rate = 5e-3
 criterion = nn.CosineEmbeddingLoss()
 optimizer = optim.Adam(eeg_enc.parameters(), lr=learning_rate)
 
+import time
 epoch_num = 0
-epoch_num = 0
-while dsg_tasks.should_keep_training():
-    epoch_num += 1
-    for task in dsg_tasks.tasks:
-        if task.should_keep_training():
+lr_alt = 0
+set_final = False
+print(f"|Epoch Num   |Task Name   |Current Loss      |Status      |Time          |")
+while learning_rate > 1e-6 or set_final:
+    while dsg_tasks.should_keep_training():
+        epoch_num += 1
+        for task in dsg_tasks.tasks:
             cur_loss = 0.0
             tot_cnt = 0
+            start_time = time.time()
             if task.name == "EEG-TXT":
                 zuco_data = zuco_dataloader.load_data()
                 while not zuco_data["reset"]:
@@ -57,37 +68,64 @@ while dsg_tasks.should_keep_training():
                     loss = criterion(res.to(device).float().view(embed.shape[0] * 77, 768), embed.to(device).float().view(embed.shape[0] * 77, 768), torch.ones(embed.shape[0] * 77).to(device))
 
                     optimizer.zero_grad()
-                    loss.backward()
-                    optimizer.step()
+                    if task.should_keep_training():
+                      loss.backward()
+                      optimizer.step()
 
-                    cur_loss += loss.item()
+                    cur_loss += loss.item() * zuco_data["size"]
                     tot_cnt += zuco_data["size"]
                     zuco_data = zuco_dataloader.load_data()
-                print(epoch_num, "EEG-TXT")
 
             elif task.name == "EEG-IMG":
-                # Needs Debugging
                 image_net_data = image_net_dataloader.load_data()
                 while not image_net_dataloader.reset():
                     input_data_batched = image_net_data["data"]
-                    input_data_batched = input_data_batched[0]
+                    input_data_batched_converted = torch.zeros(tuple([len(input_data_batched)]) + input_data_batched[0].shape).to(device)
+                    for i in range(len(input_data_batched)):
+                      input_data_batched_converted[i] = input_data_batched[i].to(device)
                     target_batched = image_net_data["target"]
+                    target_batched_converted = torch.zeros(tuple([len(target_batched)]) + target_batched[0].shape).to(device)
+                    for i in range(len(target_batched)):
+                      target_batched_converted[i] = target_batched[i].to(device)
 
-                    res = eeg_enc("IMG", input_data_batched.to(device).float(), pool_img_head=True)
-                    loss = criterion(res.to(device).float().view(target_batched.shape[0], 768), target_batched.to(device).float().view(target_batched.shape[0], 768), torch.ones(target_batched.shape[0] * 77).to(device))
+                    res = eeg_enc("IMG", input_data_batched_converted.to(device).float(), pool_img_head=True)
+                    loss = criterion(res.to(device).float().view(target_batched_converted.shape[0], 768),
+                                      target_batched_converted.to(device).float().view(target_batched_converted.shape[0], 768),
+                                      torch.ones(target_batched_converted.shape[0] * 77).to(device))
 
                     optimizer.zero_grad()
-                    loss.backward()
-                    optimizer.step()
 
-                    cur_loss += loss.item()
+                    if task.should_keep_training():
+                      loss.backward()
+                      optimizer.step()
+
+                    cur_loss += loss.item() * image_net_data["size"]
                     tot_cnt += image_net_data["size"]
                     image_net_data = image_net_dataloader.load_data()
-                print(epoch_num, "EEG-IMG")
             else:
                 print("[ERROR] BAD TASK NAME. CHECK NAMING OF TASKS AND TRAINING TO ENSURE ALL TASKS HAVE CORRESPONDING TRAINING IMPLEMENTED.")
                 assert(False)
 
             cur_loss /= tot_cnt
             task.update(epoch_num, cur_loss)
-            print(epoch_num, task.name, cur_loss)
+            writer.add_scalar(f"{task.name} Training Loss", cur_loss, epoch_num)
+
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            if task.is_converged():
+              print(f"|{epoch_num:12}|{task.name:12}|{cur_loss:18.9f}|CONVERGED   |{elapsed_time:12.6f} s|")
+            elif task.is_diverged():
+              print(f"|{epoch_num:12}|{task.name:12}|{cur_loss:18.9f}|DIVERGED    |{elapsed_time:12.6f} s|")
+            else:
+              print(f"|{epoch_num:12}|{task.name:12}|{cur_loss:18.9f}|TRAINING    |{elapsed_time:12.6f} s|")
+
+    if lr_alt % 2 == 0:
+        learning_rate /= 4
+    else:
+        learning_rate *= 2
+    if learning_rate < 1e-6:
+        set_final = True
+        learning_rate = 1e-6
+    lr_alt += 1
+    print(f"Convergence Acheived. Adjusted learning rate to {learning_rate}.")
+    optimizer = optim.Adam(eeg_enc.parameters(), lr=learning_rate)
