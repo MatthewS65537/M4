@@ -51,7 +51,7 @@ class DSGTask():
             # Not diverged if returned back to previous best
             self.diverged = False
 
-        if cur_epoch - self.best_loss_epoch + 1 > self.convergence_limit:
+        if cur_epoch - self.best_loss_epoch + 1 > self.convergence_limit and not self.diverged:
             self.converged = True
 
         # Check for divergence
@@ -95,6 +95,6 @@ class DSGTasks():
     # Returns a boolean of whether or not training should continue (returns True as long as one of them should keep training)
     def should_keep_training(self):
         for task in self.tasks:
-            if not task.should_keep_training():
-                return False
-        return True
+            if task.should_keep_training():
+                return True
+        return False
