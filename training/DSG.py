@@ -1,7 +1,7 @@
 # An object for implementing a task in DSG.
 class DSGTask():
     # DSGTask() constructor
-    def __init__(self, task_name, dataset=None, converge_lim=10, div_threshold=0.01):
+    def __init__(self, task_name, dataset=None, converge_lim=10, converge_threshold = 0.001, div_threshold=0.01):
         super(DSGTask, self).__init__()
         
         # String of task name (ex: "IMG")
@@ -22,6 +22,12 @@ class DSGTask():
         self.divergence_threshold = div_threshold
         # Determine final convergence rounds
         self.final_round = False
+        # Maintain a history of losses
+        self.past_val_loss = []
+        # Convergence rate
+        self.convergence_rate = 1.0
+        # Convergence Threshold
+        self.convergence_threshold = converge_threshold
 
     # Helper to see if task is converged
     def is_converged(self):
@@ -40,10 +46,20 @@ class DSGTask():
 
     # Update function to perform updates on all tasks
     def update(self, cur_epoch, val_loss):
+        self.past_val_loss.append(val_loss)
+        if len(self.past_val_loss) < self.convergence_limit + 1:
+            return
+        self.convergence_rate = (self.past_val_loss[-self.convergence_limit - 1] - self.past_val_loss[-1])/ (self.convergence_limit)
+
         # Do nothing if on final rounds
         if self.final_round:
-            return
+            return None
 
+        if self.convergence_rate < self.convergence_threshold and self.convergence_rate > 0.0:
+            self.diverged = False
+            self.converged = True
+
+        """ OLD VER
         # Update best val loss if val loss is better
         if val_loss < self.best_val_loss:
             self.best_val_loss = val_loss
@@ -53,6 +69,7 @@ class DSGTask():
 
         if cur_epoch - self.best_loss_epoch + 1 > self.convergence_limit and not self.diverged:
             self.converged = True
+        """
 
         # Check for divergence
         if self.converged and val_loss >= (self.best_val_loss + self.divergence_threshold):
