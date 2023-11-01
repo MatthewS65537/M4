@@ -47,6 +47,8 @@ class DSGTask():
     def reset_convergence(self):
         self.converged = False
         self.diverged = False
+        self.past_val_loss = []
+        self.convergence_rate = 1.0
 
     def reset_task(self):
         self.reset_convergence()
@@ -68,7 +70,10 @@ class DSGTask():
         if self.final_round:
             return None
 
-        if self.convergence_rate < self.convergence_threshold and self.convergence_rate > 0.0:
+        # If convergence rate is less than the threshold, is not diverging,
+        # and the current loss is within the tolerated boundaries of the best loss,
+        # set convergence to be True.
+        if self.convergence_rate < self.convergence_threshold and self.convergence_rate > 0.0 and val_loss < self.best_val_loss + self.divergence_threshold:
             self.diverged = False
             self.converged = True
 
