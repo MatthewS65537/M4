@@ -44,6 +44,19 @@ class DSGTask():
     def should_keep_training(self):
         return self.converged == False or self.diverged == True or self.set_final_round == True
 
+    def reset_convergence(self):
+        self.converged = False
+        self.diverged = False
+
+    def reset_task(self):
+        self.reset_convergence()
+        self.best_val_loss = 9e99
+        self.best_loss_epoch = 0
+        self.final_round = False
+        self.past_val_loss = []
+        self.convergence_rate = 1.0
+
+
     # Update function to perform updates on all tasks
     def update(self, cur_epoch, val_loss):
         self.past_val_loss.append(val_loss)
@@ -115,3 +128,11 @@ class DSGTasks():
             if task.should_keep_training():
                 return True
         return False
+
+    def reset_convergence(self):
+        for task in self.tasks:
+            task.reset_convergence()
+
+    def reset_task(self):
+        for task in self.tasks:
+            task.reset_task()
