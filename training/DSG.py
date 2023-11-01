@@ -62,8 +62,21 @@ class DSGTask():
     # Update function to perform updates on all tasks
     def update(self, cur_epoch, val_loss):
         self.past_val_loss.append(val_loss)
+
+        # Update best val loss if val loss is better
+        if val_loss < self.best_val_loss:
+            self.best_val_loss = val_loss
+            self.best_loss_epoch = cur_epoch
+
+        # Check for divergence
+        if val_loss > (self.best_val_loss + self.divergence_threshold):
+            self.diverged = True
+
+        # Pass if not enough training has happened
         if len(self.past_val_loss) < self.convergence_limit + 1:
             return
+
+        # Calculate convergence rate
         self.convergence_rate = (self.past_val_loss[-self.convergence_limit - 1] - self.past_val_loss[-1])/ (self.convergence_limit)
 
         # Do nothing if on final rounds
@@ -90,9 +103,9 @@ class DSGTask():
         """
 
         # Check for divergence
-        if self.converged and val_loss >= (self.best_val_loss + self.divergence_threshold):
-            self.converged = False
-            self.diverged = True
+        # if self.converged and val_loss >= (self.best_val_loss + self.divergence_threshold):
+        #     self.converged = False
+        #     self.diverged = True
 
 # An object for interacting with numerous `DSGTask()` objects
 class DSGTasks():
