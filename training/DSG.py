@@ -41,15 +41,18 @@ class DSGTask():
     def set_final_round(self):
         self.final_round = True
 
+    # Determine if task should continue training
     def should_keep_training(self):
         return self.converged == False or self.diverged == True or self.set_final_round == True
 
+    # Reset convergence of task
     def reset_convergence(self):
         self.converged = False
         self.diverged = False
         self.past_val_loss = []
         self.convergence_rate = 1.0
 
+    # Reset task completely
     def reset_task(self):
         self.reset_convergence()
         self.best_val_loss = 9e99
@@ -58,6 +61,9 @@ class DSGTask():
         self.past_val_loss = []
         self.convergence_rate = 1.0
 
+    # Set convergence threshold (use when updating LR)
+    def set_convergence_threshold(self, converge_threshold):
+        self.convergence_threshold = converge_threshold
 
     # Update function to perform updates on all tasks
     def update(self, cur_epoch, val_loss):
@@ -72,7 +78,7 @@ class DSGTask():
         if val_loss > (self.best_val_loss + self.divergence_threshold):
             self.diverged = True
 
-        # Pass if not enough training has happened
+        # Skip if not enough training has happened
         if len(self.past_val_loss) < self.convergence_limit + 1:
             return
 
@@ -86,7 +92,7 @@ class DSGTask():
         # If convergence rate is less than the threshold, is not diverging,
         # and the current loss is within the tolerated boundaries of the best loss,
         # set convergence to be True.
-        if self.convergence_rate < self.convergence_threshold and self.convergence_rate > 0.0 and val_loss < self.best_val_loss + self.divergence_threshold:
+        if (self.convergence_rate < self.convergence_threshold) and (self.convergence_rate > 0.0) and (val_loss < self.best_val_loss + self.divergence_threshold):
             self.diverged = False
             self.converged = True
 
@@ -147,10 +153,17 @@ class DSGTasks():
                 return True
         return False
 
+    # Set convergence threshold for all tasks
+    def set_convergence_threshold(self, converge_threshold):
+        for task in self.tasks:
+            task.set_convergence_threshold(converge_threshold)
+
+    # Reset convergence for all tasks
     def reset_convergence(self):
         for task in self.tasks:
             task.reset_convergence()
 
+    # Reset all tasks
     def reset_task(self):
         for task in self.tasks:
             task.reset_task()
