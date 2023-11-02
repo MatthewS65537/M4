@@ -1,7 +1,9 @@
-def test_ZuCo(test_dataloader, model, loss_fn):
+import torch
+
+def test_ZuCo(test_dataloader, model, loss_fn, device="cuda:0"):
   zuco_dataloader = test_dataloader
   eeg_enc = model
-  loss = loss_fn
+  criterion = loss_fn
 
   cur_loss = 0.0
   tot_cnt = 0

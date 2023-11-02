@@ -1,7 +1,9 @@
-def test_Brain2Image(test_dataloader, model, loss_fn):
+import torch
+
+def test_Brain2Image(test_dataloader, model, loss_fn, device="cuda:0"):
   image_net_dataloader = test_dataloader
   eeg_enc = model
-  loss = loss_fn
+  criterion = loss_fn
 
   cur_loss = 0.0
   tot_cnt = 0
@@ -28,6 +30,6 @@ def test_Brain2Image(test_dataloader, model, loss_fn):
       tot_cnt += image_net_data["size"]
       image_net_data = image_net_dataloader.load_data()
 
-    cur_loss /= tot_cnt
+  cur_loss /= tot_cnt
 
-    return {"loss" : cur_loss}
+  return {"loss" : cur_loss}
