@@ -2,6 +2,7 @@ import sys
 
 sys.path.append("./models")
 sys.path.append("./training")
+sys.path.append("./testing")
 sys.path.append("./utils")
 sys.path.append("./ZuCo")
 
@@ -24,7 +25,7 @@ take_first = 50
 shortened_eeg_labels = {"labels" : image_eeg_labels["dev"]["labels"][:take_first], "eeg" : image_eeg_labels["dev"]["eeg"][:take_first]}
 shortened_test_eeg_labels = {"labels" : image_eeg_labels["test"]["labels"][:take_first], "eeg" : image_eeg_labels["test"]["eeg"][:take_first]}
 image_net_dataloader = ImageNetDataloader(shortened_eeg_labels, img_net_dict, bsz=1, drop_last=True)
-image_test_dataloader = ImageNetDataloader(shortened_test_eeg_labels, img_net_dict, bsz=1, drop_last=True)
+image_net_test_dataloader = ImageNetDataloader(shortened_test_eeg_labels, img_net_dict, bsz=1, drop_last=True)
 
 dsg_tasks = DSGTasks()
 dsg_tasks.add_task(DSGTask("EEG-TXT", dataset=zuco_dataloader, converge_lim=5, converge_threshold=0.005, div_threshold=0.01))
@@ -49,7 +50,11 @@ criterion = nn.CosineEmbeddingLoss()
 optimizer = optim.Adam(eeg_enc.parameters(), lr=learning_rate)
 
 dsg_tasks.reset_convergence()
+
 import time
+from test_Brain2Image import *
+from test_ZuCoImage import *
+
 epoch_num = 0
 lr_alt = 0
 set_final = False
@@ -60,6 +65,8 @@ while learning_rate > 1e-6 or set_final:
         for task in dsg_tasks.tasks:
             cur_loss = 0.0
             tot_cnt = 0
+            test_loss = None
+
             start_time = time.time()
             if task.name == "EEG-TXT":
                 zuco_data = zuco_dataloader.load_data()
@@ -78,6 +85,7 @@ while learning_rate > 1e-6 or set_final:
                     cur_loss += loss.item() * zuco_data["size"]
                     tot_cnt += zuco_data["size"]
                     zuco_data = zuco_dataloader.load_data()
+                test_loss = test_Brain2Image(dataloader=zuco_test_dataloader, model=eeg_enc, loss_fn=criterion)["loss"]
 
             elif task.name == "EEG-IMG":
                 image_net_data = image_net_dataloader.load_data()
@@ -105,13 +113,16 @@ while learning_rate > 1e-6 or set_final:
                     cur_loss += loss.item() * image_net_data["size"]
                     tot_cnt += image_net_data["size"]
                     image_net_data = image_net_dataloader.load_data()
+                test_loss = test_Brain2Image(dataloader=image_net_test_dataloader, model=eeg_enc, loss_fn=criterion)["loss"]
             else:
                 print("[ERROR] BAD TASK NAME. CHECK NAMING OF TASKS AND TRAINING TO ENSURE ALL TASKS HAVE CORRESPONDING TRAINING IMPLEMENTED.")
                 assert(False)
 
             cur_loss /= tot_cnt
-            task.update(epoch_num, cur_loss)
+            # task.update(epoch_num, cur_loss)
+            task.update(epoch_num, test_loss)
             writer.add_scalar(f"{task.name} Training Loss", cur_loss, epoch_num)
+            writer.add_scaler(f"{task.name} Testing Loss", test_loss, epoch_num)
 
             end_time = time.time()
             elapsed_time = end_time - start_time
