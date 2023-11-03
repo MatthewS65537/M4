@@ -13,22 +13,22 @@ class ImageNetDataloader():
         self.is_reset = False
 
         if not self.bsz == 1:
-          print("[WARNING] IMAGE NET TRAINING NOT IMPLEMENTED FOR BSZ NOT 1. PROCEED WITH CAUTION.")
+            print("[WARNING] IMAGE NET TRAINING NOT IMPLEMENTED FOR BSZ NOT 1. PROCEED WITH CAUTION.")
 
     def load_data(self):
+        self.is_reset = False
         self.ptr += self.bsz
         if (self.ptr > (self.dataset_size // self.bsz * self.bsz) and self.drop_last) or (self.ptr > self.dataset_size and not self.drop_last):
-            self.is_reset = True
+            self.reset()
+            self.ptr += self.bsz
+            
         target = [self.image_net_dict[self.labeled_eeg["labels"][i]] for i in range(self.ptr - self.bsz, min(self.ptr, self.dataset_size))]
         sz = min(self.ptr, self.dataset_size) - (self.ptr - self.bsz)
-        return {"data" : self.labeled_eeg["eeg"][self.ptr-self.bsz:min(self.ptr, self.dataset_size)], "target" : target, "size" : sz}
+        return {"data" : self.labeled_eeg["eeg"][self.ptr-self.bsz:min(self.ptr, self.dataset_size)], "target" : target, "size" : sz, "reset" : self.is_reset}
 
     def reset(self):
-        if self.is_reset:
-            self.is_reset = False
-            self.ptr = 0
-            return True
-        return False
+        self.ptr = 0
+        self.is_reset = True
 
 class ZuCoDataloader():
     def __init__(self, data, targets, bsz=64, drop_last=True):
@@ -37,9 +37,8 @@ class ZuCoDataloader():
         self.embeds_dataloader = DataLoader(targets, batch_size=bsz, shuffle=False, drop_last=drop_last)
         self.eeg_iter = iter(self.eeg_dataloader)
         self.embeds_iter = iter(self.embeds_dataloader)
-        self.is_reset = False
 
-    def load_data(self, just_reset = False):
+    def load_data(self, just_reset=False):
         try:
             eeg = next(self.eeg_iter)
             embed = next(self.embeds_iter)[:,0,:,:]
