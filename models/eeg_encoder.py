@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class TextHead(nn.Module):
-    def __init__(self, input_dim=840, output_dim=1024, hidden_dim=1024, num_layers=2, device="cuda:0"):
+    def __init__(self, input_dim=840, output_dim=1024, hidden_dim=1024, num_layers=2, device="cuda"):
         super(TextHead, self).__init__()
         self.hidden_layers = nn.ModuleList()
         self.hidden_layers.append(nn.Linear(input_dim, hidden_dim))
@@ -20,7 +20,7 @@ class TextHead(nn.Module):
         return x
 
 class ImgHead(nn.Module):
-    def __init__(self, input_dim=500, output_dim=1024, hidden_dim=1024, num_layers=2, device="cuda:0"):
+    def __init__(self, input_dim=500, output_dim=1024, hidden_dim=1024, num_layers=2, device="cuda"):
         super(ImgHead, self).__init__()
         self.hidden_layers = nn.ModuleList()
         self.hidden_layers.append(nn.Linear(input_dim, hidden_dim))
