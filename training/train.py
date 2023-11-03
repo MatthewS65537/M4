@@ -19,37 +19,33 @@ Brain2Image_data = load_img_data("./data/Brain2Image")
 image_eeg_labels, img_net_dict = Brain2Image_data["data"], Brain2Image_data["targets"]
 del Brain2Image_data
 
-zuco_dataloader = ZuCoDataloader(master_eeg["dev"], master_embeds["dev"], bsz=64, drop_last=True)
+zuco_dataloader = ZuCoDataloader(master_eeg["train"], master_embeds["train"], bsz=64, drop_last=True)
 zuco_test_dataloader = ZuCoDataloader(master_eeg["test"], master_embeds["test"], bsz=64, drop_last=True)
-take_first = 50
-shortened_eeg_labels = {"labels" : image_eeg_labels["dev"]["labels"][:take_first], "eeg" : image_eeg_labels["dev"]["eeg"][:take_first]}
-shortened_test_eeg_labels = {"labels" : image_eeg_labels["test"]["labels"][:take_first], "eeg" : image_eeg_labels["test"]["eeg"][:take_first]}
-image_net_dataloader = ImageNetDataloader(shortened_eeg_labels, img_net_dict, bsz=1, drop_last=True)
-image_net_test_dataloader = ImageNetDataloader(shortened_test_eeg_labels, img_net_dict, bsz=1, drop_last=True)
+image_net_dataloader = ImageNetDataloader(image_eeg_labels["train"], img_net_dict, bsz=1, drop_last=True)
+image_net_test_dataloader = ImageNetDataloader(image_eeg_labels["test"], img_net_dict, bsz=1, drop_last=True)
 
 dsg_tasks = DSGTasks()
-dsg_tasks.add_task(DSGTask("EEG-TXT", dataset=zuco_dataloader, converge_lim=5, converge_threshold=0.005, div_threshold=0.01))
-dsg_tasks.add_task(DSGTask("EEG-IMG", dataset=image_net_dataloader, converge_lim=5, converge_threshold=0.005, div_threshold=0.01))
+dsg_tasks.add_task(DSGTask("EEG-TXT", dataset=zuco_dataloader, converge_lim=10, converge_threshold=0.005, div_threshold=0.01))
+dsg_tasks.add_task(DSGTask("EEG-IMG", dataset=image_net_dataloader, converge_lim=10, converge_threshold=0.005, div_threshold=0.01))
 
 from torch.utils.tensorboard import SummaryWriter
-log_dir = "./logs/Train_Testing"
+
+log_dir = "./logs/Train1"
 writer = SummaryWriter(log_dir=log_dir)
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 
-device = "cuda:0"
+device = "cuda"
 
-# eeg_enc = EEGEncoder(txt_in_feat=840, img_in_feat=128, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8).to(device)
-eeg_enc = EEGEncoder(txt_in_feat=840, img_in_feat=128, enc_feat=1024, dec_emb_sz=768, enc_nhead=2, enc_dim_ff=512, num_enc_layers=4).to(device) # Dummy model
-eeg_enc = nn.DataParallel(eeg_enc, device_ids=[0])
+eeg_enc = EEGEncoder(txt_in_feat=840, img_in_feat=128, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8).to(device)
+# eeg_enc = nn.DataParallel(eeg_enc, device_ids=[0])
+eeg_enc = nn.DataParallel(eeg_enc, device_ids=[0,1,2,3])
 
-learning_rate = 5e-3
+learning_rate = 1e-2
 criterion = nn.CosineEmbeddingLoss()
 optimizer = optim.Adam(eeg_enc.parameters(), lr=learning_rate)
-
-dsg_tasks.reset_convergence()
 
 import time
 from test_Brain2Image import *
@@ -58,6 +54,8 @@ from test_ZuCo import *
 epoch_num = 0
 lr_alt = 0
 set_final = False
+dsg_tasks.reset_task()
+dsg_tasks.set_convergence_threshold(learning_rate)
 print(f"|Epoch Num   |Task Name   |Current Loss      |Test Loss         |Status      |Time          |")
 while learning_rate > 1e-6 or set_final:
     while dsg_tasks.should_keep_training():
@@ -71,6 +69,7 @@ while learning_rate > 1e-6 or set_final:
             if task.name == "EEG-TXT":
                 zuco_data = zuco_dataloader.load_data()
                 while not zuco_data["reset"]:
+                    optimizer = optim.Adam(eeg_enc.parameters(), lr=learning_rate)
                     input_embeddings, seq_len, input_masks, input_mask_invert, target_ids, target_mask, sentiment_labels, sent_level_EEG = zuco_data["data"]
                     res = eeg_enc("TXT", input_embeddings.to(device).float(), input_masks.to(device), input_mask_invert.to(device))
                     embed = zuco_data["target"]
@@ -88,6 +87,7 @@ while learning_rate > 1e-6 or set_final:
                 test_loss = test_ZuCo(test_dataloader=zuco_test_dataloader, model=eeg_enc, loss_fn=criterion)["loss"]
 
             elif task.name == "EEG-IMG":
+                optimizer = optim.Adam(eeg_enc.parameters(), lr=learning_rate * 1)
                 image_net_data = image_net_dataloader.load_data()
                 while not image_net_dataloader.reset():
                     input_data_batched = image_net_data["data"]
@@ -146,3 +146,4 @@ while learning_rate > 1e-6 or set_final:
     print(f"Convergence Acheived. Adjusted learning rate to {learning_rate}.")
     optimizer = optim.Adam(eeg_enc.parameters(), lr=learning_rate)
     dsg_tasks.reset_convergence()
+    dsg_tasks.set_convergence_threshold(learning_rate)
