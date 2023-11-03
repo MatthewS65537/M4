@@ -43,7 +43,7 @@ class DSGTask():
 
     # Determine if task should continue training
     def should_keep_training(self):
-        return self.converged == False or self.diverged == True or self.set_final_round == True
+        return self.converged == False or self.diverged == True or self.final_round == True
 
     # Reset convergence of task
     def reset_convergence(self):

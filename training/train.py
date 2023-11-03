@@ -53,12 +53,12 @@ dsg_tasks.reset_convergence()
 
 import time
 from test_Brain2Image import *
-from test_ZuCoImage import *
+from test_ZuCo import *
 
 epoch_num = 0
 lr_alt = 0
 set_final = False
-print(f"|Epoch Num   |Task Name   |Current Loss      |Status      |Time          |")
+print(f"|Epoch Num   |Task Name   |Current Loss      |Test Loss         |Status      |Time          |")
 while learning_rate > 1e-6 or set_final:
     while dsg_tasks.should_keep_training():
         epoch_num += 1
@@ -85,7 +85,7 @@ while learning_rate > 1e-6 or set_final:
                     cur_loss += loss.item() * zuco_data["size"]
                     tot_cnt += zuco_data["size"]
                     zuco_data = zuco_dataloader.load_data()
-                test_loss = test_Brain2Image(dataloader=zuco_test_dataloader, model=eeg_enc, loss_fn=criterion)["loss"]
+                test_loss = test_ZuCo(test_dataloader=zuco_test_dataloader, model=eeg_enc, loss_fn=criterion)["loss"]
 
             elif task.name == "EEG-IMG":
                 image_net_data = image_net_dataloader.load_data()
@@ -113,7 +113,7 @@ while learning_rate > 1e-6 or set_final:
                     cur_loss += loss.item() * image_net_data["size"]
                     tot_cnt += image_net_data["size"]
                     image_net_data = image_net_dataloader.load_data()
-                test_loss = test_Brain2Image(dataloader=image_net_test_dataloader, model=eeg_enc, loss_fn=criterion)["loss"]
+                test_loss = test_Brain2Image(test_dataloader=image_net_test_dataloader, model=eeg_enc, loss_fn=criterion)["loss"]
             else:
                 print("[ERROR] BAD TASK NAME. CHECK NAMING OF TASKS AND TRAINING TO ENSURE ALL TASKS HAVE CORRESPONDING TRAINING IMPLEMENTED.")
                 assert(False)
@@ -122,16 +122,16 @@ while learning_rate > 1e-6 or set_final:
             # task.update(epoch_num, cur_loss)
             task.update(epoch_num, test_loss)
             writer.add_scalar(f"{task.name} Training Loss", cur_loss, epoch_num)
-            writer.add_scaler(f"{task.name} Testing Loss", test_loss, epoch_num)
+            writer.add_scalar(f"{task.name} Testing Loss", test_loss, epoch_num)
 
             end_time = time.time()
             elapsed_time = end_time - start_time
             if task.is_converged():
-              print(f"|{epoch_num:12}|{task.name:12}|{cur_loss:18.9f}|CONVERGED   |{elapsed_time:12.6f} s|")
+              print(f"|{epoch_num:12}|{task.name:12}|{cur_loss:18.9f}|{test_loss:18.9f}|CONVERGED   |{elapsed_time:12.6f} s|")
             elif task.is_diverged():
-              print(f"|{epoch_num:12}|{task.name:12}|{cur_loss:18.9f}|DIVERGED    |{elapsed_time:12.6f} s|")
+              print(f"|{epoch_num:12}|{task.name:12}|{cur_loss:18.9f}|{test_loss:18.9f}|DIVERGED    |{elapsed_time:12.6f} s|")
             else:
-              print(f"|{epoch_num:12}|{task.name:12}|{cur_loss:18.9f}|TRAINING    |{elapsed_time:12.6f} s|")
+              print(f"|{epoch_num:12}|{task.name:12}|{cur_loss:18.9f}|{test_loss:18.9f}|TRAINING    |{elapsed_time:12.6f} s|")
 
     if learning_rate == 1e-6 and set_final:
         break
