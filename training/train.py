@@ -147,3 +147,5 @@ while learning_rate > 1e-6 or set_final:
     optimizer = optim.Adam(eeg_enc.parameters(), lr=learning_rate)
     dsg_tasks.reset_convergence()
     dsg_tasks.set_convergence_threshold(learning_rate)
+
+torch.save(eeg_enc.state_dict(), "EEG_ENC.pt")
