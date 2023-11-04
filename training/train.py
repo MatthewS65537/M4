@@ -36,21 +36,22 @@ del Brain2Image_data
 
 print("[INFO] Loaded datasets.")
 
-zuco_dataloader = ZuCoDataloader(master_eeg["train"], master_embeds["train"], bsz=64, drop_last=True)
-zuco_test_dataloader = ZuCoDataloader(master_eeg["test"], master_embeds["test"], bsz=64, drop_last=True)
+zuco_dataloader = ZuCoDataloader(master_eeg["train"], master_embeds["train"], bsz=512, drop_last=True)
+zuco_test_dataloader = ZuCoDataloader(master_eeg["test"], master_embeds["test"], bsz=512, drop_last=True)
 image_net_dataloader = ImageNetDataloader(image_eeg_labels["train"], img_net_dict, bsz=1, drop_last=True)
 
-take_first = 100
-new_test_set = {"eeg" : image_eeg_labels["test"]["eeg"][:take_first], "labels" : image_eeg_labels["test"]["labels"][:take_first]}
-image_net_test_dataloader = ImageNetDataloader(new_test_set, img_net_dict, bsz=1, drop_last=True)
+# take_first = 100
+# new_test_set = {"eeg" : image_eeg_labels["test"]["eeg"][:take_first], "labels" : image_eeg_labels["test"]["labels"][:take_first]}
+# image_net_test_dataloader = ImageNetDataloader(new_test_set, img_net_dict, bsz=1, drop_last=True)
+image_net_test_dataloader = ImageNetDataloader(image_eeg_labels["test"], img_net_dict, bsz=1, drop_last=True)
 
 dsg_tasks = DSGTasks()
-dsg_tasks.add_task(DSGTask("EEG-TXT", dataset=zuco_dataloader, converge_lim=10, converge_threshold=0.005, div_threshold=0.01))
-dsg_tasks.add_task(DSGTask("EEG-IMG", dataset=image_net_dataloader, converge_lim=10, converge_threshold=0.005, div_threshold=0.01))
+dsg_tasks.add_task(DSGTask("EEG-TXT", dataset=zuco_dataloader, converge_lim=5, converge_threshold=0.005, div_threshold=0.01))
+# dsg_tasks.add_task(DSGTask("EEG-IMG", dataset=image_net_dataloader, converge_lim=5, converge_threshold=0.005, div_threshold=0.01))
 
 print("[INFO] Constructed dataloaders and DSG.")
 
-log_dir = "./logs/LazyTrain1"
+log_dir = "./logs/EEG-TXT-TEST2"
 writer = SummaryWriter(log_dir=log_dir)
 
 device = "cuda"
@@ -163,8 +164,8 @@ while learning_rate > 1e-6 or set_final:
     if learning_rate < 1e-6:
         set_final = True
         learning_rate = 1e-6
-    torch.save(eeg_enc.state_dict(), f"./checkpoints/EEG_ENC_{lr_alt - 1}.pt")
-    print(f"[INFO] Checkpointed ./checkpoints/EEG_ENC_{lr_alt - 1}.pt.")
+    torch.save(eeg_enc.state_dict(), f"./checkpoints/EEG_ENC_{lr_alt}.pt")
+    print(f"[INFO] Checkpointed ./checkpoints/EEG_ENC_{lr_alt}.pt.")
     lr_alt += 1
     print(f"[TRAINING INFO] Convergence Acheived. Adjusted learning rate to {learning_rate}.")
     optimizer = optim.Adam(eeg_enc.parameters(), lr=learning_rate)

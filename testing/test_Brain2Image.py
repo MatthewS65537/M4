@@ -9,7 +9,7 @@ def test_Brain2Image(test_dataloader, model, loss_fn, device="cuda"):
     tot_cnt = 0
 
     image_net_data = image_net_dataloader.load_data()
-    while not image_net_dataloader["reset"]:
+    while not image_net_data["reset"]:
         input_data_batched = image_net_data["data"]
         input_data_batched_converted = torch.zeros(tuple([len(input_data_batched)]) + input_data_batched[0].shape).to(device)
         for i in range(len(input_data_batched)):
