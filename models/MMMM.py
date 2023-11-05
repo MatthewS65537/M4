@@ -10,6 +10,7 @@ from EEGEncoder import *
 
 class Branch(nn.Module):
     def __init__(self, head, body, device="cuda"):
+        super(Branch, self).__init__()
         self.head = head
         self.body = body
         self.device = device
@@ -18,13 +19,13 @@ class Branch(nn.Module):
         if mode == "EEG-TEXT-BART":
             input_data_batch = args_dict["input_data_batch"]
             input_masks_batch = args_dict["input_masks_batch"]
-            target_ids_batch_converted = ["target_ids_batch_converted"]
-            out = self.head(input_data_batch)
+            target_ids_batch = args_dict["target_ids_batch"]
+            encoded_embedding = self.head(input_data_batch)
             out = self.body(
                 inputs_embeds = encoded_embedding,
                 attention_mask = input_masks_batch,
                 return_dict = True,
-                labels = target_ids_batch_converted
+                labels = target_ids_batch
                 )
             return out
 
@@ -36,10 +37,10 @@ class MMMM(nn.Module):
         self.device = device
 
     def add_branch(self, name, branch):
-        self.branches[name] = branch
+        self.branches[name] = branch.to(self.device)
 
     def forward(self, mode, args_dict):
         if mode == "EEG-TEXT-BART":
-            encoded_embedding = self.eeg_encoder(mode, args_dict)
-            out = self.branch["EEG-TEXT-BART"](args_dict)
+            args_dict["input_data_batch"] = self.eeg_encoder(mode, args_dict)
+            out = self.branches[mode](mode, args_dict)
             return out
