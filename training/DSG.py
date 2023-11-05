@@ -3,7 +3,7 @@ import numpy as np
 # An object for implementing a task in DSG.
 class DSGTask():
     # DSGTask() constructor
-    def __init__(self, task_name, dataset=None, converge_lim=10, converge_threshold = 0.001, div_threshold=0.01):
+    def __init__(self, task_name, dataloader=None, converge_lim=10, converge_threshold = 0.001, div_threshold=0.01):
         super(DSGTask, self).__init__()
         
         # String of task name (ex: "IMG")
@@ -13,7 +13,7 @@ class DSGTask():
         # Epoch num for best validation loss
         self.best_loss_epoch = 0
         # Dataset for task
-        self.dataset = dataset
+        self.dataloader = dataloader
         # Boolean to see if converged
         self.converged = False
         # Num rounds of no improvements to consider convergence
