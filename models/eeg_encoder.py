@@ -34,16 +34,16 @@ class EEGEncoder(nn.Module):
     def add_task(self, task_name, task_head):
         self.task_heads[task_name] = task_head
 
-    def forward(self, mode, input_data_batch=None, input_masks_batch=None, input_masks_invert=None, pool_result=False):
+    def forward(self, mode, input_data_batch=None, input_masks_batch=None, input_masks_invert=None, pool_output=False):
         encoded_embedding = self.task_heads[mode](input_data_batch)
         encoded_embedding = self.encoder(encoded_embedding, src_key_padding_mask = input_masks_invert)
         encoded_embedding = F.relu(self.fc_proj(encoded_embedding))
         
-        if pool_result:
-            pooler = torch.zeros(encoded_embedding.shape[0:1]+encoded_embedding.shape[-1:]).to(device)
+        if pool_output:
+            pooler = torch.zeros(encoded_embedding.shape[0:1]+encoded_embedding.shape[-1:]).to(self.device)
             for i in range(encoded_embedding.shape[0]):
-              for j in range(encoded_embedding.shape[-2]):
-                  pooler[i] += encoded_embedding[i][j][:]
-              pooler[i] /= encoded_embedding.shape[-2]
+                for j in range(encoded_embedding.shape[-2]):
+                    pooler[i] += encoded_embedding[i][j][:]
+                pooler[i] /= encoded_embedding.shape[-2]
             return pooler
         return encoded_embedding

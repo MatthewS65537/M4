@@ -19,7 +19,7 @@ def test_Brain2Image(test_dataloader, model, loss_fn, device="cuda"):
         for i in range(len(target_batched)):
             target_batched_converted[i] = target_batched[i].to(device)
 
-        res = eeg_enc(mode="IMG", input_data_batch=input_data_batched_converted.to(device).float(), pool_img_head=True)
+        res = eeg_enc(mode="EEG-IMG", input_data_batch=input_data_batched_converted.to(device).float(), pool_output=True)
         loss = criterion(res.to(device).float().view(target_batched_converted.shape[0], 768),
                         target_batched_converted.to(device).float().view(target_batched_converted.shape[0], 768),
                         torch.ones(target_batched_converted.shape[0] * 77).to(device))
