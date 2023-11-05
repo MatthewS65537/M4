@@ -11,7 +11,7 @@ def test_ZuCo(test_dataloader, model, loss_fn, device="cuda"):
     zuco_data = zuco_dataloader.load_data()
     while not zuco_data["reset"]:
         input_embeddings, seq_len, input_masks, input_mask_invert, target_ids, target_mask, sentiment_labels, sent_level_EEG = zuco_data["data"]
-        res = eeg_enc(mode="TXT", input_data_batch=input_embeddings.to(device).float(), input_masks_batch=input_masks.to(device), input_masks_invert=input_mask_invert.to(device))
+        res = eeg_enc(mode="EEG-TXT", input_data_batch=input_embeddings.to(device).float(), input_masks_batch=input_masks.to(device), input_masks_invert=input_mask_invert.to(device))
         embed = zuco_data["target"]
 
         loss = criterion(res.to(device).float().view(embed.shape[0] * 77, 768), embed.to(device).float().view(embed.shape[0] * 77, 768), torch.ones(embed.shape[0] * 77).to(device))
