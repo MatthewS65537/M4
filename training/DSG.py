@@ -1,3 +1,5 @@
+import numpy as np
+
 # An object for implementing a task in DSG.
 class DSGTask():
     # DSGTask() constructor
@@ -92,7 +94,9 @@ class DSGTask():
         # If convergence rate is less than the threshold, is not diverging,
         # and the current loss is within the tolerated boundaries of the best loss,
         # set convergence to be True.
-        if (self.convergence_rate < self.convergence_threshold) and (self.convergence_rate > 0.0) and (val_loss < self.best_val_loss + self.divergence_threshold):
+        # Also ensure that current loss is at relative minimum?
+#         if (self.convergence_rate < self.convergence_threshold) and (self.convergence_rate > 0.0) and (val_loss < self.best_val_loss + self.divergence_threshold) and (np.argmin(np.array(past_val_loss[-self.convergence_limit:])) == self.convergence_limit - 1):
+        if (self.convergence_rate < self.convergence_threshold) and (self.convergence_rate > 0.0) and (val_loss <= self.best_val_loss or (len(self.past_val_loss) > self.convergence_limit * 5 and val_loss <= self.best_val_loss + self.divergence_threshold)):
             self.diverged = False
             self.converged = True
 

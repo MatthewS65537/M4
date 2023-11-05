@@ -108,7 +108,7 @@ while learning_rate > 1e-6 or set_final:
 
             elif task.name == "EEG-IMG":
 #                 image_net_data = image_net_dataloader.load_data()
-#                 while not image_net_dataloader.reset():
+#                 while not image_net_dataloader["reset"]:
                 for _ in tqdm(range(num_batches_per_epoch)):
 #                 for _ in range(num_batches_per_epoch):
                     image_net_data = image_net_dataloader.load_data()
