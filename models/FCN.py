@@ -14,6 +14,7 @@ class FCN(nn.Module):
         self.output_layer = nn.Linear(hidden_dim, output_dim)
         self.activation = nn.ReLU()
         self.device = device
+        self.to(device)
 
     def forward(self, x):
         for layer in self.hidden_layers:
