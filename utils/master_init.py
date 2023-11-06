@@ -54,9 +54,9 @@ def INITIALIZE_MODEL(device="cuda"):
 				output_dim=1024,
 				num_layers=2,
 				device=device
-				)
-			),
+				),
 			body=BART_pretrained
+			),
 			device=device
 		)
 
