@@ -17,7 +17,7 @@ def INITIALIZE_MODEL(device="cuda"):
 		)
 
 	eeg_enc.add_head(
-		name="EEG-TXT-BART",
+		name="EEG-TEXT-BART",
 		head=FCN(
 			input_dim=840,
 			output_dim=1024,
@@ -46,8 +46,8 @@ def INITIALIZE_MODEL(device="cuda"):
 	BART_tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
 	BART_pretrained = BartForConditionalGeneration.from_pretrained('facebook/bart-large')
 
-	MMMM.add_branch(
-		name="EEG-TXT-BART",
+	model.add_branch(
+		name="EEG-TEXT-BART",
 		branch=Branch(
 			head=FCN(
 				input_dim=768,
@@ -55,9 +55,9 @@ def INITIALIZE_MODEL(device="cuda"):
 				num_layers=2,
 				device=device
 				),
-			body=BART_pretrained
+			body=BART_pretrained,
+      device=device
 			),
-			device=device
 		)
 
-	return MMMM
+	return model

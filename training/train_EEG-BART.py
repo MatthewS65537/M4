@@ -1,4 +1,5 @@
 import sys
+import time
 
 sys.path.append("./models")
 sys.path.append("./training")
@@ -19,7 +20,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from transformers import BartTokenizer
 
-def train_one_epoch(dataloader, model, optimizer, criterion, tokenizer):
+def train_one_epoch(dataloader, model, optimizer, criterion, tokenizer, device="cuda"):
   results = {}
   for phase in ['train', 'dev']:
     if phase == 'train':
@@ -80,27 +81,28 @@ if __name__ == "__main__":
 
   print("[INFO] Loaded tokenizer.")
 
+
+  learning_rate = 5e-4
+  model = INITIALIZE_MODEL(device=device).to(device)
+  optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+  criterion = nn.CrossEntropyLoss()
+
+  print("[INFO] Initialized model.")
+
   ZuCo_data = load_txt_data("./data/ZuCo")
   master_eeg, master_embeds = ZuCo_data["data"], ZuCo_data["targets"]
   del ZuCo_data
-  bsz=64
+  bsz=16
   ZuCo_dataloader = {
     "train" : ZuCoDataloader(master_eeg["train"], master_embeds["train"], bsz=bsz, drop_last=True),
     "dev" : ZuCoDataloader(master_eeg["dev"], master_embeds["dev"], bsz=bsz, drop_last=True),
     "test" : ZuCoDataloader(master_eeg["test"], master_embeds["test"], bsz=bsz, drop_last=True)
   }
   del master_eeg, master_embeds
-  print("[INFO] Prepared dataloader.")
+  print("[INFO] Prepared ZuCo dataloader.")
 
   log_dir = "./logs/EEG-TXT-BART"
   writer = SummaryWriter(log_dir=log_dir)
-
-  model = INITIALIZE_MODEL(device="cuda").to(device)
-  learning_rate = 5e-4
-  optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-  criterion = nn.CrossEntropyLoss()
-
-  print("[INFO] Initialized model.")
 
   dsg_tasks = DSGTasks()
   dsg_tasks.add_task(
@@ -114,7 +116,6 @@ if __name__ == "__main__":
     )
   print("[INFO] Initialized DSG.")
 
-  import time
   epoch_num = 0
   print(f"|Epoch Num   |Task Name   |Current Loss      |Test Loss         |Status      |Time          |")
   while epoch_num < 10:
@@ -126,7 +127,8 @@ if __name__ == "__main__":
           dataloader=task.dataloader,
           optimizer=optimizer,
           criterion=criterion,
-          tokenizer=tokenizer
+          tokenizer=tokenizer,
+          device=device
           )
       model = results["model"]
       train_loss = results["train_loss"]
