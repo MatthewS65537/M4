@@ -17,10 +17,10 @@ class EEGEncoder(nn.Module):
         self.fc_proj = nn.Linear(enc_feat, dec_emb_sz)
 
     def add_head(self, name, head):
-        self.heads[name] = head
+        self.heads[name] = head.to(self.device)
 
     def forward(self, mode, args_dict):
-        if mode == "EEG-TXT-BART":
+        if mode == "EEG-TEXT-BART":
             input_data_batch = args_dict["input_data_batch"]
             input_masks_invert = args_dict["input_masks_invert"]
             encoded_embedding = self.heads[mode](input_data_batch)
@@ -28,7 +28,7 @@ class EEGEncoder(nn.Module):
             encoded_embedding = F.relu(self.fc_proj(encoded_embedding))
             return encoded_embedding
 
-        if mode == "EEG-IMG-BRAIN2IMAGE":
+        elif mode == "EEG-IMG-BRAIN2IMAGE":
             input_data_batch = args_dict["input_data_batch"]
             encoded_embedding = self.heads[mode](input_data_batch)
             pool_result = args_dict["pool_result"]
@@ -39,4 +39,3 @@ class EEGEncoder(nn.Module):
                       pooler[i] += encoded_embedding[i][j][:]
                   pooler[i] /= encoded_embedding.shape[-2]
                 return pooler
-        return encoded_embedding

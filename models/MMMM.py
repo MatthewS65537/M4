@@ -33,6 +33,6 @@ class MMMM(nn.Module):
         if mode == "EEG-TEXT-BART":
             encoded_embedding = self.eeg_encoder(mode, args_dict)
             encoded_embedding = self.meta_head(encoded_embedding)
-            args_dict["input_data_batch"] = 
+            args_dict["input_data_batch"]
             out = self.branch["EEG-TEXT-BART"](args_dict)
             return out
