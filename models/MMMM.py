@@ -6,41 +6,33 @@ import sys
 sys.path.append("./models")
 
 from FCN import *
-from EEGEncoder import *
-
-class Branch(nn.Module):
-    def __init__(self, head, body, device="cuda"):
-        super(Branch, self).__init__()
-        self.head = head
-        self.body = body
-        self.device = device
-
-    def forward(self, mode, args_dict):
-        if mode == "EEG-TEXT-BART":
-            input_data_batch = args_dict["input_data_batch"]
-            input_masks_batch = args_dict["input_masks_batch"]
-            target_ids_batch = args_dict["target_ids_batch"]
-            encoded_embedding = self.head(input_data_batch)
-            out = self.body(
-                inputs_embeds = encoded_embedding,
-                attention_mask = input_masks_batch,
-                return_dict = True,
-                labels = target_ids_batch
-                )
-            return out
+from Branch import *
 
 class MMMM(nn.Module):
-    def __init__(self, eeg_encoder, device="cuda"):
+    def __init__(
+        self,
+        eeg_encoder,
+        meta_head=FCN(
+            input_dim=768,
+            output_dim=768,
+            num_layers=4,
+            device=device
+            ),
+        device="cuda"
+        ):
         super(MMMM, self).__init__()
         self.eeg_encoder = eeg_encoder
         self.branches = {}
+        self.meta_head = meta_head
         self.device = device
 
     def add_branch(self, name, branch):
-        self.branches[name] = branch.to(self.device)
+        self.branches[name] = branch
 
     def forward(self, mode, args_dict):
         if mode == "EEG-TEXT-BART":
-            args_dict["input_data_batch"] = self.eeg_encoder(mode, args_dict)
-            out = self.branches[mode](mode, args_dict)
+            encoded_embedding = self.eeg_encoder(mode, args_dict)
+            encoded_embedding = self.meta_head(encoded_embedding)
+            args_dict["input_data_batch"]
+            out = self.branch["EEG-TEXT-BART"](args_dict)
             return out
