@@ -24,7 +24,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             input_dim=840,
             output_dim=1024,
             hidden_dim=1024,
-            num_layers=2,
+            num_layers=1,
             device=device
             )
         )
@@ -35,7 +35,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             input_dim=128,
             output_dim=1024,
             hidden_dim=1024,
-            num_layers=2,
+            num_layers=1,
             device=device
             )
         )
@@ -51,19 +51,28 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
     
     if not device_ids == None:
         BART_pretrained = nn.DataParallel(BART_pretrained, device_ids=device_ids)
+        
+    BART_branch = Branch(
+        head=FCN(
+            input_dim=768,
+            output_dim=1024,
+            num_layers=1,
+            device=device
+            ),
+        body=BART_pretrained,
+        device=device
+        )
+    
+    for name, param in BART_branch.named_parameters():
+        if param.requires_grad and 'body' in name:
+            if ('shared' in name) or ('embed_positions' in name) or ('encoder.layers.0' in name):
+                continue
+            else:
+                param.requires_grad = False
 
     model.add_branch(
         name="EEG-TEXT-BART",
-        branch=Branch(
-            head=FCN(
-                input_dim=768,
-                output_dim=1024,
-                num_layers=2,
-                device=device
-                ),
-            body=BART_pretrained,
-            device=device
-            ),
+        branch=BART_branch
         )
 
     return model

@@ -12,6 +12,7 @@ from DSG import *
 from load_data import *
 from data import *
 from dataloader import *
+from count_params import *
 
 import torch
 import torch.nn as nn
@@ -63,11 +64,18 @@ def train_one_epoch(dataloader, model, optimizer, criterion, tokenizer, device="
       
       # Backward + Optimize only if in training phase
       if phase == 'train':
-          loss.backward()
-          optimizer.step()
+        if device_ids == None:
+            loss.backward()
+            optimizer.step()
+        else:
+            loss.sum().backward()
+            optimizer.step()
 
       # Compute stats
-      running_loss += loss.item() * input_embeddings_batch.size()[0]
+      if device_ids == None:
+        running_loss += loss.item() * input_embeddings_batch.size()[0]
+      else:
+        running_loss += loss.sum().item() * input_embeddings_batch.size()[0]
       tot_cnt += input_embeddings_batch.size()[0]
       current_data = dataloader[phase].load_data()
 
@@ -88,16 +96,18 @@ if __name__ == "__main__":
   learning_rate = 5e-4
   model = INITIALIZE_MODEL(device=device, device_ids=device_ids).to(device)
   model = nn.DataParallel(model, device_ids=device_ids)
-  print(model)
   optimizer = optim.Adam(model.parameters(), lr=learning_rate)
   criterion = nn.CrossEntropyLoss()
 
   print("[INFO] Initialized model.")
+  print("[INFO] Model Components:")
+  print(f"[INFO] {count_params(model)} TOTAL PARAMETERS.")
+  print(f"[INFO] {count_params(model, trainable=True)} TRAINABLE PARAMETERS.")
 
   ZuCo_data = load_txt_data("./data/ZuCo")
   master_eeg, master_embeds = ZuCo_data["data"], ZuCo_data["targets"]
   del ZuCo_data
-  bsz=16
+  bsz=256
   ZuCo_dataloader = {
     "train" : ZuCoDataloader(master_eeg["train"], master_embeds["train"], bsz=bsz, drop_last=True),
     "dev" : ZuCoDataloader(master_eeg["dev"], master_embeds["dev"], bsz=bsz, drop_last=True),
