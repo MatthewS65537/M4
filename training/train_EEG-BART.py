@@ -20,7 +20,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 from transformers import BartTokenizer
 
-def train_one_epoch(dataloader, model, optimizer, criterion, tokenizer, device="cuda"):
+def train_one_epoch(dataloader, model, optimizer, criterion, tokenizer, device="cuda", device_ids=None):
+  staging_device = f"cuda:{device_ids[0]}" if device_ids == None else "cuda"
   results = {}
   for phase in ['train', 'dev']:
     if phase == 'train':
@@ -36,10 +37,10 @@ def train_one_epoch(dataloader, model, optimizer, criterion, tokenizer, device="
     while not current_data["reset"]:
       input_embeddings, seq_len, input_masks, input_mask_invert, target_ids, target_mask, sentiment_labels, sent_level_EEG = current_data["data"]
         
-      input_embeddings_batch = input_embeddings.to(device).float()
-      input_masks_batch = input_masks.to(device)
-      input_mask_invert_batch = input_mask_invert.to(device)
-      target_ids_batch = target_ids.to(device)
+      input_embeddings_batch = input_embeddings.to(staging_device).float()
+      input_masks_batch = input_masks.to(staging_device)
+      input_mask_invert_batch = input_mask_invert.to(staging_device)
+      target_ids_batch = target_ids.to(staging_device)
 
       target_ids_batch[target_ids_batch == tokenizer.pad_token_id] = -100 
     
@@ -54,7 +55,8 @@ def train_one_epoch(dataloader, model, optimizer, criterion, tokenizer, device="
       
       seq2seqLMoutput = model(
         mode="EEG-TEXT-BART",
-        args_dict=args_dict
+        args_dict=args_dict,
+        staging_device=staging_device
         )
 
       loss = seq2seqLMoutput.loss # Use the BART language modeling loss
@@ -77,13 +79,16 @@ def train_one_epoch(dataloader, model, optimizer, criterion, tokenizer, device="
 
 if __name__ == "__main__":
   device="cuda"
+  device_ids=[0,1,2,3]
   tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
 
   print("[INFO] Loaded tokenizer.")
 
 
   learning_rate = 5e-4
-  model = INITIALIZE_MODEL(device=device).to(device)
+  model = INITIALIZE_MODEL(device=device, device_ids=device_ids).to(device)
+  model = nn.DataParallel(model, device_ids=device_ids)
+  print(model)
   optimizer = optim.Adam(model.parameters(), lr=learning_rate)
   criterion = nn.CrossEntropyLoss()
 
@@ -128,7 +133,8 @@ if __name__ == "__main__":
           optimizer=optimizer,
           criterion=criterion,
           tokenizer=tokenizer,
-          device=device
+          device=device,
+          device_ids=device_ids
           )
       model = results["model"]
       train_loss = results["train_loss"]

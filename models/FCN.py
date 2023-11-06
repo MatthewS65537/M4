@@ -16,7 +16,7 @@ class FCN(nn.Module):
         self.device = device
         self.to(device)
 
-    def forward(self, x):
+    def forward(self, x, staging_device="cuda:0"):
         for layer in self.hidden_layers:
             x = self.activation(layer(x))
         x = self.activation(self.output_layer(x))

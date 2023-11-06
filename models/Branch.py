@@ -9,14 +9,15 @@ from FCN import *
 from EEGEncoder import *
 
 class Branch(nn.Module):
-    def __init__(self, head, body, device="cuda"):
+    def __init__(self, head, body, device="cuda", device_ids=None):
         super(Branch, self).__init__()
         self.head = head
         self.body = body
-        self.device = device
         self.to(device)
+        self.device = device
+        self.device_ids = device_ids
 
-    def forward(self, mode, args_dict):
+    def forward(self, mode, args_dict, staging_device="cuda:0"):
         if mode == "EEG-TEXT-BART":
             input_data_batch = args_dict["input_data_batch"]
             input_masks_batch = args_dict["input_masks_batch"]
