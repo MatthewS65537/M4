@@ -1,10 +1,10 @@
 import pickle
 import torch
 
-def load_txt_data(dir="./data/ZuCo"):
-    with open(f"{dir}/ZuCoProcessedDatasetDict.pkl", "rb") as f:
+def load_txt_data(dir="./data/ZuCo", model_type="BART"):
+    with open(f"{dir}/ZuCoProcessedDatasetDict-{model_type}.pkl", "rb") as f:
         master_eeg = pickle.load(f)
-    with open(f"{dir}/ZuCoTargetStringsEmbeds.pkl", "rb") as f:
+    with open(f"{dir}/ZuCoTargetStringsEmbeds-{model_type}.pkl", "rb") as f:
         master_embeds = pickle.load(f)
     return {"data" : master_eeg, "targets" : master_embeds}
 
