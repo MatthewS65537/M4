@@ -1,10 +1,13 @@
 import sys
 sys.path.append("./models")
+sys.path.append("./utils")
 
 from FCN import *
 from EEGEncoder import *
 from MMMM import *
 from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig
+from load_data import *
+from dataloader import *
 
 def INITIALIZE_MODEL(device="cuda", device_ids=None):
     device_ids=None
@@ -76,3 +79,21 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
         )
 
     return model
+
+def INITIALIZE_DATALOADERS(keys):
+    dataloader_dict = {}
+    for key in keys:
+        if key == "ZuCo-BART":
+            ZuCo_data = load_txt_data("./data/ZuCo", "BART")
+            master_eeg, master_embeds = ZuCo_data["data"], ZuCo_data["targets"]
+            del ZuCo_data
+            bsz=512
+            ZuCo_dataloader = {
+                "train" : ZuCoDataloader(master_eeg["train"], master_embeds["train"], bsz=bsz, drop_last=True),
+                "dev" : ZuCoDataloader(master_eeg["dev"], master_embeds["dev"], bsz=1, drop_last=True),
+                "test" : ZuCoDataloader(master_eeg["test"], master_embeds["test"], bsz=1, drop_last=True)
+            }
+            del master_eeg, master_embeds
+            dataloader_dict[key] = ZuCo_dataloader
+            del ZuCo_dataloader
+    return dataloader_dict
