@@ -123,7 +123,7 @@ def eval_model(dataloader, device, tokenizer, criterion, model, output_all_resul
 if __name__ == '__main__': 
     CKPT_DIR = "./Checkpoints/MMMM_EEG-TEXT-BART"
     RESULTS_DIR = "./Results/MMMM_EEG-TEXT-BART"
-    MODEL_NAME = "EEG-TEXT-BART-TUNED-ADAM-MEAN"
+    MODEL_NAME = "EEG-TEXT-BART-TUNED-ADAM-MIMIC"
     FINAL_BEST = "BEST"
     
     device="cuda"
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     print("[INFO] Loaded model checkpoint.")
     
     dataloaders = INITIALIZE_DATALOADERS(
-        keys=["ZuCo-BART"]
+        keys=["ZuCo-BART"],
     )
     ZuCo_dataloader=dataloaders["ZuCo-BART"]
     print("[INFO] Intialized dataloaders.")

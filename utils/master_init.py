@@ -77,17 +77,27 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
         name="EEG-TEXT-BART",
         branch=BART_branch
         )
+    model.add_head(
+        name="EEG-TEXT-BART",
+        head=FCN(
+            input_dim=768,
+            output_dim=768,
+            num_layers=4,
+            device=device
+        )
+    )
 
     return model
 
-def INITIALIZE_DATALOADERS(keys):
+def INITIALIZE_DATALOADERS(keys, bsz):
     dataloader_dict = {}
+    idx = 0
     for key in keys:
         if key == "ZuCo-BART":
             ZuCo_data = load_txt_data("./data/ZuCo", "BART")
             master_eeg, master_embeds = ZuCo_data["data"], ZuCo_data["targets"]
             del ZuCo_data
-            bsz=512
+            bsz=bsz[idx]
             ZuCo_dataloader = {
                 "train" : ZuCoDataloader(master_eeg["train"], master_embeds["train"], bsz=bsz, drop_last=True),
                 "dev" : ZuCoDataloader(master_eeg["dev"], master_embeds["dev"], bsz=1, drop_last=True),
@@ -96,4 +106,5 @@ def INITIALIZE_DATALOADERS(keys):
             del master_eeg, master_embeds
             dataloader_dict[key] = ZuCo_dataloader
             del ZuCo_dataloader
+        idx += 1
     return dataloader_dict
