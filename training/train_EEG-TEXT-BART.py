@@ -16,9 +16,12 @@ from count_params import *
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.tensorboard import SummaryWriter
 
 from transformers import BartTokenizer
+
+from argparser import get_config
 
 def train_one_epoch(dataloader, model, optimizer, criterion, tokenizer, device="cuda", device_ids=None, staging_device=None):
     if staging_device==None:
@@ -94,35 +97,49 @@ if __name__ == "__main__":
     torch.cuda.manual_seed_all(seed_val)
     print(f"[INFO] Manual seed set to {seed_val}.")
     
-    LOG_DIR = "./logs/MMMM_EEG-TEXT-BART-TUNED-ADAM-SMALL_STEPS"
-    CKPT_DIR = "./Checkpoints/MMMM_EEG-TEXT-BART"
-    MODEL_NAME = "EEG-TEXT-BART-TUNED-ADAM-SMALL_STEPS"
+#   Parse Arguments
+    config = get_config("TRAIN_EEG-TEXT-BART")
     
-    device="cuda"
-    device_ids=[0,1,2,3]
+    LOG_DIR = config["log_dir"]
+    CKPT_DIR = config["ckpt_dir"]
+    MODEL_NAME = config["model_name"]
+    
+    lr_init = config["initial_learning_rate"]
+    lr_min = config["minimum_learning_rate"]
+    lr_gamma = config["gamma_learning_rate"]
+    lr_alt = config["alt_learning_rate"]
+    
+    device=config["device"]
+    device_ids=config["device_ids"]
+    
+#   Load pretrained tokenizer
     tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
-
     print("[INFO] Loaded tokenizer.")
     
-    learning_rate=1e-5
+#   Set up model
+    learning_rate=lr_init
     model = INITIALIZE_MODEL(device=device, device_ids=device_ids).to(device)
     model = nn.DataParallel(model, device_ids=device_ids)
-    optimizer = optim.Adagrad(model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
 
     print("[INFO] Initialized model.")
     print("[INFO] Model Components:")
     print(f"[INFO] {count_params(model)} TOTAL PARAMETERS.")
     print(f"[INFO] {count_params(model, trainable=True)} TRAINABLE PARAMETERS.")
-    
+
+#   Set up dataloaders
     dataloaders = INITIALIZE_DATALOADERS(
-        keys=["ZuCo-BART"]
+        keys=["ZuCo-BART"],
+        bsz=[config["batch_size"]]
     )
     ZuCo_dataloader=dataloaders["ZuCo-BART"]
     print("[INFO] Intialized dataloaders.")
-
+    
+#   Set up log
     writer = SummaryWriter(log_dir=LOG_DIR)
-
+    
+#   Set up DSG
     dsg_tasks = DSGTasks()
     dsg_tasks.add_task(
         DSGTask(
@@ -134,21 +151,13 @@ if __name__ == "__main__":
             )
         )
     print("[INFO] Initialized DSG.")
-
+    
+#   Training Loop
     epoch_num = 0
     best_loss = 9e999
     print(f"|Epoch Num     |Task Name     |Current Loss            |Test Loss                 |Status            |Time                    |")
     while epoch_num < 50:
-        if epoch_num < 10:
-            optimizer=optim.Adam(model.parameters(), lr=5e-5)
-        elif epoch_num < 20:
-            optimizer=optim.Adam(model.parameters(), lr=1e-5)
-        elif epoch_num < 30:
-            optimizer=optim.Adam(model.parameters(), lr=2e-6)
-        elif epoch_num < 40:
-            optimizer=optim.Adam(model.parameters(), lr=4e-7)
-        else:
-            optimizer=optim.Adam(model.parameters(), lr=1e-7)
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
         for task in dsg_tasks.tasks:
             start_time = time.time()
             if task.name == "EEG-TEXT-BART":
@@ -185,6 +194,9 @@ if __name__ == "__main__":
 
             task.update(epoch_num, dev_loss)
         epoch_num += 1
+        learning_rate *= lr_gamma
+        if learning_rate < lr_min:
+            learning_rate = lr_min
         
         if epoch_num % 5 == 0:
             torch.save(model.state_dict(), f"{CKPT_DIR}/{MODEL_NAME}_EPOCH{epoch_num}.pt")
