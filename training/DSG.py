@@ -30,6 +30,8 @@ class DSGTask():
         self.convergence_rate = 1.0
         # Convergence Threshold
         self.convergence_threshold = converge_threshold
+        self.learning_rate = None
+        self.optimizer = None
 
     # Helper to see if task is converged
     def is_converged(self):

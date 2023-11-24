@@ -23,10 +23,19 @@ class Branch(nn.Module):
             input_masks_batch = args_dict["input_masks_batch"]
             target_ids_batch = args_dict["target_ids_batch"]
             encoded_embedding = self.head(input_data_batch)
+            # Body is pretrained BART
             out = self.body(
                 inputs_embeds = encoded_embedding,
                 attention_mask = input_masks_batch,
                 return_dict = True,
                 labels = target_ids_batch
                 )
+            return out
+        if mode == "EEG-IMG-DIFFUSION":
+            input_data_batch = args_dict["input_data_batch"]
+            input_masks_batch = args_dict["input_masks_batch"]
+            target_ids_batch = args_dict["target_ids_batch"]
+            encoded_embedding = self.head(input_data_batch)
+            # Body is DiffusionHead()
+            out = self.body(args_dict)
             return out
