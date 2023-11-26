@@ -14,16 +14,24 @@ from data import *
 from dataloader import *
 from count_params import *
 
+import numpy as np
+
+import pickle
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
+import itertools
+
+from transformers import BartTokenizer
+
 from tqdm import tqdm
 
 def train_one_epoch(dataloader, model, optimizer, criterion, tokenizer, device="cuda", device_ids=None, staging_device=None):
     if staging_device==None:
-        staging_device = f"cuda:{device_ids[0]}" if device_ids == None else "cuda"
+        staging_device = f"cuda:{device_ids[0]}" if not device_ids == None else "cuda"
     results = {}
     for phase in ['train', 'dev']:
         if phase == 'train':
@@ -99,10 +107,22 @@ if __name__ == "__main__":
         ("RMSprop", optim.RMSprop),
     ]
     print("[INFO] Initialized hyperparameter choices for tuning.")
+
+    # Hyperparams Tuning CKPT (reports what is completed)
+    HYPERPARAM_CKPT_PATH = f"./tuning/EEG-TEXT-BART/TUNING_PROGRESS_CKPT.pkl"
+    completed = []
+    if os.path.exists(HYPERPARAM_CKPT_PATH):
+        with open(HYPERPARAM_CKPT_PATH, "rb") as f:
+            completed = pickle.load(f)
+    print(completed)
     
+    #   Load pretrained tokenizer
+    tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
+    print("[INFO] Loaded tokenizer.")
+
     # Configure Model
     device="cuda"
-    device_ids=[0,1,2,3]
+    device_ids=[0]
     seed_val = 1066
     
     np.random.seed(seed_val)
@@ -117,11 +137,12 @@ if __name__ == "__main__":
         # For consistency
         torch.save(model.state_dict(), BASE_PATH)
     print("[INFO] Configured BASE model.")
-    
+
+    bsz = 128 * len(device_ids)
     # Set up dataloaders
     dataloaders = INITIALIZE_DATALOADERS(
         keys=["ZuCo-BART"],
-        bsz=[config["batch_size"]]
+        bsz=[bsz]
     )
     ZuCo_dataloader=dataloaders["ZuCo-BART"]
     print("[INFO] Intialized dataloaders.")
@@ -129,15 +150,23 @@ if __name__ == "__main__":
     for config in tqdm(itertools.product(learning_rates, optimizers)):
         learning_rate = config[0]
         optimizer = config[1]
-        
-        LOG_DIR = f"./tuning/EEG_TEXT-BART/logs"
+
+        MODEL_NAME = f"{optimizer[0]}-{bsz}-{learning_rate}"
+        LOG_DIR = f"./tuning/EEG-TEXT-BART/logs/{MODEL_NAME}"
         CKPT_DIR = f"./tuning/EEG-TEXT-BART/checkpoints"
-        MODEL_NAME = f"{optimizer[0]}-{learning_rate}"
+
+        if MODEL_NAME in completed and os.path.exists(LOG_DIR):
+            print(f"\n[INFO] {MODEL_NAME} already complete.")
+            continue
         
-        print(f"[INFO] Setting up {MODEL_NAME}...")
+        if os.path.exists(LOG_DIR):
+            print(f"\n[INFO] Tensorboard logs for {MODEL_NAME} already exist.")
+            completed.append(MODEL_NAME)
+            continue
+              
+        print(f"\n[INFO] Setting up {MODEL_NAME}...")
 
         #   Set up model
-        learning_rate=lr_init
         model = INITIALIZE_MODEL(device=device, device_ids=device_ids).to(device)
         model = nn.DataParallel(model, device_ids=device_ids)
         model.load_state_dict(torch.load(BASE_PATH))
@@ -166,7 +195,6 @@ if __name__ == "__main__":
         best_loss = 9e999
         print(f"|Epoch Num     |Task Name     |Current Loss            |Test Loss                 |Status            |Time                    |")
         while epoch_num < 10:
-            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
             for task in dsg_tasks.tasks:
                 start_time = time.time()
                 if task.name == "EEG-TEXT-BART":
@@ -178,7 +206,6 @@ if __name__ == "__main__":
                         tokenizer=tokenizer,
                         device=device,
                         device_ids=device_ids,
-                        staging_device="cuda:1"
                         )
                 model = results["model"]
                 train_loss = results["train_loss"]
@@ -204,3 +231,8 @@ if __name__ == "__main__":
                 task.update(epoch_num, dev_loss)
             epoch_num += 1
         torch.save(model.state_dict(), f"{CKPT_DIR}/{MODEL_NAME}_FINAL.pt")
+        completed.append(MODEL_NAME)
+        with open(HYPERPARAM_CKPT_PATH, "wb") as f:
+            pickle.dump(completed, f)
+        del model
+        del writer
