@@ -3,10 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DiffusionHead(nn.Module):
-	def __init__(self, scheduler, unet):
+	def __init__(self, scheduler, unet, device):
 		super(EEGEncoder, self).__init__()
 		self.scheduler = scheduler
 		self.unet = unet
+		self.device = device
+
+		self.to(device)
 
 	def forward(self, embd, steps):
 		uncond = text_enc_tuned([""] * bs, emb.shape[1])

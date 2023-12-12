@@ -6,11 +6,12 @@ from FCN import *
 from EEGEncoder import *
 from MMMM import *
 from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig
+from diffusers import UNet2DConditionModel, LMSDiscreteScheduler
 from load_data import *
 from dataloader import *
 
 def INITIALIZE_MODEL(device="cuda", device_ids=None):
-    device_ids=None
+    ### SET UP EEG ENCODER###
     eeg_enc = EEGEncoder(
         enc_feat=1024,
         dec_emb_sz=768,
@@ -18,7 +19,6 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
         enc_dim_ff=2048,
         num_enc_layers=8,
         device=device,
-#         device_ids=device_ids
         )
 
     eeg_enc.add_head(
@@ -43,18 +43,20 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             )
         )
 
+    ### CREATE MMMM MODEL ###
     model = MMMM(
         eeg_encoder=eeg_enc,
         device=device,
-#         device_ids=device_ids
         )
 
+    ### LOAD EEG-TEXT-BART ###
     BART_tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
     BART_pretrained = BartForConditionalGeneration.from_pretrained('facebook/bart-large')
     
     if not device_ids == None:
         BART_pretrained = nn.DataParallel(BART_pretrained, device_ids=device_ids)
-        
+
+    # Create Branch for EEG-TEXT-BART
     BART_branch = Branch(
         head=FCN(
             input_dim=768,
@@ -65,18 +67,14 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
         body=BART_pretrained,
         device=device
         )
-    
-    for name, param in BART_branch.named_parameters():
-        if param.requires_grad and 'body' in name:
-            if ('shared' in name) or ('embed_positions' in name) or ('encoder.layers.0' in name):
-                continue
-            else:
-                param.requires_grad = False
 
+    # Adding Branch
     model.add_branch(
         name="EEG-TEXT-BART",
         branch=BART_branch
         )
+
+    # Adding Head
     model.add_head(
         name="EEG-TEXT-BART",
         head=FCN(
@@ -86,6 +84,59 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             device=device
         )
     )
+    
+    for name, param in BART_branch.named_parameters():
+        if param.requires_grad and 'body' in name:
+            if ('shared' in name) or ('embed_positions' in name) or ('encoder.layers.0' in name):
+                continue
+            else:
+                param.requires_grad = False
+
+    ### LOAD EEG-IMG-BRAIN2IMAGE ###
+    
+    # Initializing a scheduler and Setting number of sampling steps
+	scheduler = LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000)
+	scheduler.set_timesteps(50)
+	
+	# Initializing the U-Net model
+	unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet", torch_dtype=torch.float16).to(device)
+
+	# Create Branch for EEG-IMG-BRAIN2IMAGE
+    BRAIN2IMAGE_branch = Branch(
+    	head=FCN(
+    		input_dim=768,
+    		output_dim=768,
+    		num_layers=1,
+    		device=device
+    		),
+    	body=DiffusionHead(
+    		scheduler=scheduler,
+    		unet=unet,
+    		device=device
+    		),
+    	device=device
+    	)
+
+    # Adding Branch
+    model.add_branch(
+        name="EEG-IMG-BRAIN2IMAGE",
+        branch=BRAIN2Image_branch,
+        )
+
+    # Adding Head
+    model.add_head(
+        name="EEG-IMG-BRAIN2IMAGE",
+        head=FCN(
+        	input_dim=768,
+        	output_dim=768,
+        	num_layers=4,
+        	device=device
+        	)
+    )
+
+    ### LOAD --- ###
+    ## Dummy Code
+
 
     return model
 

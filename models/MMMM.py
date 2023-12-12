@@ -46,3 +46,12 @@ class MMMM(nn.Module):
             args_dict["input_data_batch"] = encoded_embedding
             out = self.branches[mode](mode,args_dict,staging_device)
             return out
+        elif mode == "EEG-IMG-BRAIN2IMAGE":
+            encoded_embedding = self.eeg_encoder(mode, args_dict)
+            if meta:
+                encoded_embedding = self.meta_head(encoded_embedding)
+            else:
+                encoded_embedding = self.heads[mode](encoded_embedding)
+            args_dict["input_data_batch"] = encoded_embedding
+            out = self.branches[mode](mode, args_dict, staging_device)
+            return out

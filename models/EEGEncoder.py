@@ -7,6 +7,7 @@ sys.path.append("./models")
 
 from FCN import *
 
+# Main EEGEncoder() Class for Image Processing
 class EEGEncoder(nn.Module):
     def __init__(self, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8, device="cuda", device_ids=None):
         super(EEGEncoder, self).__init__()
