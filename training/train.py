@@ -13,20 +13,22 @@ criterion = nn.CrossEntropyLoss()
 
 dsg_tasks = DSGTasks()
 dsg_tasks.add_task(
-	DSGTask(
-		"EEG-TXT-BART",
-		dataset=zuco_dataloader,
-		converge_lim=2,
-		converge_threshold=0.05,
-		div_threshold=0.01
-		)
-	)
+    DSGTask(
+        "EEG-TXT-BART",
+        dataset=zuco_dataloader,
+        converge_lim=2,
+        converge_threshold=0.05,
+        div_threshold=0.01
+        )
+    )
 dsg_tasks.add_task(
-	DSGTask(
-		"EEG-IMG-DIFFUSION",
-		dataset=brain2image_dataloader,
-		converge_lim=2,
-		converge_threshold=0.005,
-		div_threshold=0.01
-		)
-	)
+    DSGTask(
+        "EEG-IMG-DIFFUSION",
+        dataset=brain2image_dataloader,
+        converge_lim=2,
+        converge_threshold=0.005,
+        div_threshold=0.01
+        )
+    )
+
+

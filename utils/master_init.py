@@ -95,27 +95,27 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
     ### LOAD EEG-IMG-BRAIN2IMAGE ###
     
     # Initializing a scheduler and Setting number of sampling steps
-	scheduler = LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000)
-	scheduler.set_timesteps(50)
-	
-	# Initializing the U-Net model
-	unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet", torch_dtype=torch.float16).to(device)
+    scheduler = LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000)
+    scheduler.set_timesteps(50)
+    
+    # Initializing the U-Net model
+    unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet", torch_dtype=torch.float16).to(device)
 
-	# Create Branch for EEG-IMG-BRAIN2IMAGE
+    # Create Branch for EEG-IMG-BRAIN2IMAGE
     BRAIN2IMAGE_branch = Branch(
-    	head=FCN(
-    		input_dim=768,
-    		output_dim=768,
-    		num_layers=1,
-    		device=device
-    		),
-    	body=DiffusionHead(
-    		scheduler=scheduler,
-    		unet=unet,
-    		device=device
-    		),
-    	device=device
-    	)
+        head=FCN(
+            input_dim=768,
+            output_dim=768,
+            num_layers=1,
+            device=device
+            ),
+        body=DiffusionHead(
+            scheduler=scheduler,
+            unet=unet,
+            device=device
+            ),
+        device=device
+        )
 
     # Adding Branch
     model.add_branch(
@@ -127,11 +127,11 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
     model.add_head(
         name="EEG-IMG-BRAIN2IMAGE",
         head=FCN(
-        	input_dim=768,
-        	output_dim=768,
-        	num_layers=4,
-        	device=device
-        	)
+            input_dim=768,
+            output_dim=768,
+            num_layers=4,
+            device=device
+            )
     )
 
     ### LOAD --- ###
