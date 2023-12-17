@@ -4,8 +4,9 @@ sys.path.append("./utils")
 
 from FCN import *
 from EEGEncoder import *
+from DiffusionHead import *
 from MMMM import *
-from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig
+from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig, CLIPTokenizer, CLIPTextModel
 from diffusers import UNet2DConditionModel, LMSDiscreteScheduler
 from load_data import *
 from dataloader import *
@@ -101,6 +102,10 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
     # Initializing the U-Net model
     unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet", torch_dtype=torch.float16).to(device)
 
+    # Initializing CLIP Pretrains
+    CLIPtokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+    CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
+
     # Create Branch for EEG-IMG-BRAIN2IMAGE
     BRAIN2IMAGE_branch = Branch(
         head=FCN(
@@ -112,6 +117,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
         body=DiffusionHead(
             scheduler=scheduler,
             unet=unet,
+            tokenizer=CLIPtokenizer,
+            text_encoder=CLIPtext_encoder,
             device=device
             ),
         device=device
@@ -120,7 +127,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
     # Adding Branch
     model.add_branch(
         name="EEG-IMG-BRAIN2IMAGE",
-        branch=BRAIN2Image_branch,
+        branch=BRAIN2IMAGE_branch,
         )
 
     # Adding Head

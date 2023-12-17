@@ -3,19 +3,29 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DiffusionHead(nn.Module):
-    def __init__(self, scheduler, unet, device):
-        super(EEGEncoder, self).__init__()
-        self.scheduler = scheduler
+    def __init__(self, scheduler, unet, tokenizer, text_encoder, device):
+        super(DiffusionHead, self).__init__()
+        self.DiffusionHead = scheduler
         self.unet = unet
         self.device = device
+        self.CLIPtokenizer = tokenizer
+        self.CLIPtext_encoder = text_encoder
 
         self.to(device)
 
-    def forward(self, embd, steps):
-        uncond = text_enc_tuned([""] * bs, emb.shape[1])
+    def text_enc(self, prompts, maxlen=None):
+        '''
+        A function to take a texual promt and convert it into embeddings
+        '''
+        if maxlen is None: maxlen = self.CLIPtokenizer.model_max_length
+        inp = self.CLIPtokenizer(prompts, padding="max_length", max_length=maxlen, truncation=True, return_tensors="pt")
+        return self.CLIPtext_encoder(inp.input_ids.to(self.device))[0].half()
+
+    def forward(self, embd, steps, bsz):
+        uncond = self.text_enc([""] * bsz, emb.shape[1])
         emb = torch.cat([uncond, emb])
         self.scheduler.set_timesteps(steps)
-        latents = latents.to(device).half() * self.scheduler.init_noise_sigma
+        latents = latents.to(self.device).half() * self.scheduler.init_noise_sigma
 
         for i,ts in enumerate(self.scheduler.timesteps):
             # We need to scale the i/p latents to match the variance
