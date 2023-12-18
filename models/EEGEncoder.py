@@ -7,8 +7,21 @@ sys.path.append("./models")
 
 from FCN import *
 
-# Main EEGEncoder() Class for Image Processing
+# Main EEGEncoder() Class
 class EEGEncoder(nn.Module):
+    """
+    Encoder module for EEG data.
+
+    Args:
+        enc_feat (int): The number of encoder features.
+        dec_emb_sz (int): The size of the decoder embedding.
+        enc_nhead (int): The number of attention heads in the encoder.
+        enc_dim_ff (int): The dimension of the feedforward network in the encoder.
+        num_enc_layers (int): The number of encoder layers.
+        device (str): The device to use for computation (default: "cuda").
+        device_ids (list): List of device IDs for multi-GPU training (default: None).
+    """
+
     def __init__(self, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8, device="cuda", device_ids=None):
         super(EEGEncoder, self).__init__()
         self.device = device
@@ -20,13 +33,27 @@ class EEGEncoder(nn.Module):
         self.to(device)
         
     def add_head(self, name, head):
+        """
+        Add a head module to the encoder.
+
+        Args:
+            name (str): The name of the head.
+            head (nn.Module): The head module to add.
+        """
         self.heads[name] = head
-#         if self.device_ids == None:
-#             self.heads[name] = head.to(self.device)
-#         else:
-#             self.heads[name] = nn.DataParallel(head.to(self.device),device_ids=self.device_ids)
 
     def forward(self, mode, args_dict, staging_device="cuda:0"):
+        """
+        Forward pass of the encoder.
+
+        Args:
+            mode (str): The mode of the encoder.
+            args_dict (dict): Dictionary containing input data and other arguments.
+            staging_device (str): The device to use for staging (default: "cuda:0").
+
+        Returns:
+            torch.Tensor: The encoded embedding.
+        """
         if mode == "EEG-TEXT-BART":
             input_data_batch = args_dict["input_data_batch"]
             input_masks_invert = args_dict["input_masks_invert"]

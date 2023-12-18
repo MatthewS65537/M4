@@ -6,6 +6,16 @@ import torch.nn.functional as F
 # Used as task head, adapter, projection, etc.
 class FCN(nn.Module):
     def __init__(self, input_dim=512, output_dim=1024, hidden_dim=1024, num_layers=2, device="cuda"):
+        """
+        Fully Connected Network (FCN) model.
+
+        Args:
+            input_dim (int): Dimension of the input features. Default is 512.
+            output_dim (int): Dimension of the output features. Default is 1024.
+            hidden_dim (int): Dimension of the hidden layers. Default is 1024.
+            num_layers (int): Number of hidden layers. Default is 2.
+            device (str): Device to use for computation. Default is "cuda".
+        """
         super(FCN, self).__init__()
         self.hidden_layers = nn.ModuleList()
         self.hidden_layers.append(nn.Linear(input_dim, hidden_dim))
@@ -17,6 +27,16 @@ class FCN(nn.Module):
         self.to(device)
 
     def forward(self, x, staging_device="cuda:0"):
+        """
+        Forward pass of the FCN model.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch_size, input_dim).
+            staging_device (str): Device to use for intermediate computations. Default is "cuda:0".
+
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, output_dim).
+        """
         for layer in self.hidden_layers:
             x = self.activation(layer(x))
         x = self.activation(self.output_layer(x))

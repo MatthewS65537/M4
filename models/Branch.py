@@ -10,6 +10,15 @@ from EEGEncoder import *
 
 class Branch(nn.Module):
     def __init__(self, head, body, device="cuda", device_ids=None):
+        """
+        Initializes a Branch module.
+
+        Args:
+            head (nn.Module): The head module.
+            body (nn.Module): The body module.
+            device (str, optional): The device to use. Defaults to "cuda".
+            device_ids (list, optional): List of device IDs for data parallelism. Defaults to None.
+        """
         super(Branch, self).__init__()
         self.head = head
         self.body = body
@@ -18,6 +27,17 @@ class Branch(nn.Module):
         self.device_ids = device_ids
 
     def forward(self, mode, args_dict, staging_device="cuda:0"):
+        """
+        Forward pass of the Branch module.
+
+        Args:
+            mode (str): The mode of operation.
+            args_dict (dict): Dictionary of input arguments.
+            staging_device (str, optional): The device to use for staging. Defaults to "cuda:0".
+
+        Returns:
+            The output of the forward pass.
+        """
         if mode == "EEG-TEXT-BART":
             input_data_batch = args_dict["input_data_batch"]
             input_masks_batch = args_dict["input_masks_batch"]

@@ -15,13 +15,18 @@ class DiffusionHead(nn.Module):
 
     def text_enc(self, prompts, maxlen=None):
         '''
-        A function to take a texual promt and convert it into embeddings
+        A function to take a textual promt and convert it into embeddings
         '''
         if maxlen is None: maxlen = self.CLIPtokenizer.model_max_length
         inp = self.CLIPtokenizer(prompts, padding="max_length", max_length=maxlen, truncation=True, return_tensors="pt")
         return self.CLIPtext_encoder(inp.input_ids.to(self.device))[0].half()
 
-    def forward(self, embd, steps, bsz):
+    def forward(self, emb, steps, bsz, g=7.5):
+        '''
+        g is guidance factor for diffusion model
+        We likely won't change it, but leave it as an argument for now
+        Maybe consider adding a dimension argument as well?
+        '''
         uncond = self.text_enc([""] * bsz, emb.shape[1])
         emb = torch.cat([uncond, emb])
         self.scheduler.set_timesteps(steps)
