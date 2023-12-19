@@ -2,61 +2,44 @@ import numpy as np
 
 # An object for implementing a task in DSG.
 class DSGTask():
-    # DSGTask() constructor
-    def __init__(self, task_name, dataloader=None, converge_lim=10, converge_threshold = 0.001, div_threshold=0.01):
+    def __init__(self, task_name, dataset_tag, optimizer, learning_rate, criterion, converge_lim=10, converge_threshold=0.001, div_threshold=0.01):
         super(DSGTask, self).__init__()
-        
-        # String of task name (ex: "IMG")
+        # Task Specs
         self.name = task_name
-        # Best validation loss
+        self.dataset_tag = dataset_tag
+        self.optimizer = optimizer
+        self.learning_rate = learning_rate
+        self.criterion = criterion
+        # DSG Specs
         self.best_val_loss = 9e99
-        # Epoch num for best validation loss
         self.best_loss_epoch = 0
-        # Dataset for task
-        self.dataloader = dataloader
-        # Boolean to see if converged
         self.converged = False
-        # Num rounds of no improvements to consider convergence
         self.convergence_limit = converge_lim
-        # Boolean to determine if function is diverged
         self.diverged = False
-        # Increase in val loss to consider as diverged
         self.divergence_threshold = div_threshold
-        # Determine final convergence rounds
         self.final_round = False
-        # Maintain a history of losses
         self.past_val_loss = []
-        # Convergence rate
         self.convergence_rate = 1.0
-        # Convergence Threshold
         self.convergence_threshold = converge_threshold
-        self.learning_rate = None
-        self.optimizer = None
-
-    # Helper to see if task is converged
+        
     def is_converged(self):
         return self.converged
     
-    # Helper to see if task is diverged
     def is_diverged(self):
         return self.diverged
 
-    # Helper to set final rounds of convergence on min_lr
     def set_final_round(self):
         self.final_round = True
 
-    # Determine if task should continue training
     def should_keep_training(self):
         return self.converged == False or self.diverged == True or self.final_round == True
 
-    # Reset convergence of task
     def reset_convergence(self):
         self.converged = False
         self.diverged = False
         self.past_val_loss = []
         self.convergence_rate = 1.0
 
-    # Reset task completely
     def reset_task(self):
         self.reset_convergence()
         self.best_val_loss = 9e99
@@ -65,59 +48,30 @@ class DSGTask():
         self.past_val_loss = []
         self.convergence_rate = 1.0
 
-    # Set convergence threshold (use when updating LR)
     def set_convergence_threshold(self, converge_threshold):
         self.convergence_threshold = converge_threshold
 
-    # Update function to perform updates on all tasks
     def update(self, cur_epoch, val_loss):
         self.past_val_loss.append(val_loss)
 
-        # Skip if not enough training has happened
         if len(self.past_val_loss) < self.convergence_limit + 1:
             return
         
-        # Update best val loss if val loss is better
         if val_loss < self.best_val_loss:
             self.best_val_loss = val_loss
             self.best_loss_epoch = cur_epoch
 
-        # Check for divergence
         if val_loss > (self.best_val_loss + self.divergence_threshold):
             self.diverged = True
 
-        # Calculate convergence rate
-        self.convergence_rate = (self.past_val_loss[-self.convergence_limit - 1] - self.past_val_loss[-1])/ (self.convergence_limit)
+        self.convergence_rate = (self.past_val_loss[-self.convergence_limit - 1] - self.past_val_loss[-1]) / (self.convergence_limit)
 
-        # Do nothing if on final rounds
         if self.final_round:
             return None
 
-        # If convergence rate is less than the threshold, is not diverging,
-        # and the current loss is within the tolerated boundaries of the best loss,
-        # set convergence to be True.
-        # Also ensure that current loss is at relative minimum?
-#         if (self.convergence_rate < self.convergence_threshold) and (self.convergence_rate > 0.0) and (val_loss < self.best_val_loss + self.divergence_threshold) and (np.argmin(np.array(past_val_loss[-self.convergence_limit:])) == self.convergence_limit - 1):
         if (self.convergence_rate < self.convergence_threshold) and (self.convergence_rate > 0.0) and (val_loss <= self.best_val_loss or (len(self.past_val_loss) > self.convergence_limit * 5 and val_loss <= self.best_val_loss + self.divergence_threshold)):
             self.diverged = False
             self.converged = True
-
-        """ OLD VER
-        # Update best val loss if val loss is better
-        if val_loss < self.best_val_loss:
-            self.best_val_loss = val_loss
-            self.best_loss_epoch = cur_epoch
-            # Not diverged if returned back to previous best
-            self.diverged = False
-
-        if cur_epoch - self.best_loss_epoch + 1 > self.convergence_limit and not self.diverged:
-            self.converged = True
-        """
-
-        # Check for divergence
-        # if self.converged and val_loss >= (self.best_val_loss + self.divergence_threshold):
-        #     self.converged = False
-        #     self.diverged = True
 
 # An object for interacting with numerous `DSGTask()` objects
 class DSGTasks():

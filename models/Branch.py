@@ -53,8 +53,6 @@ class Branch(nn.Module):
             return out
         if mode == "EEG-IMG-DIFFUSION":
             input_data_batch = args_dict["input_data_batch"]
-            input_masks_batch = args_dict["input_masks_batch"]
-            target_ids_batch = args_dict["target_ids_batch"]
             encoded_embedding = self.head(input_data_batch)
             # Body is DiffusionHead()
             out = self.body(args_dict)

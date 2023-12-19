@@ -5,6 +5,7 @@ sys.path.append("./utils")
 from FCN import *
 from EEGEncoder import *
 from DiffusionHead import *
+from ClassificationHead import *
 from MMMM import *
 from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig, CLIPTokenizer, CLIPTextModel
 from diffusers import UNet2DConditionModel, LMSDiscreteScheduler
@@ -12,6 +13,19 @@ from load_data import *
 from dataloader import *
 
 def INITIALIZE_MODEL(device="cuda", device_ids=None):
+    """
+    Initializes the model with the specified device and device IDs.
+
+    Args:
+        device (str, optional): The device to use for the model. Defaults to "cuda".
+        device_ids (list[int], optional): The IDs of the devices to use for parallel processing. Defaults to None.
+
+    Returns:
+        MMMM: The initialized model.
+
+    Raises:
+        None
+    """
     ### SET UP EEG ENCODER###
     eeg_enc = EEGEncoder(
         enc_feat=1024,
@@ -141,13 +155,55 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             )
     )
 
-    ### LOAD --- ###
+    ### LOAD CLASSIFICATION HEADS ###
+    IMAGENET_CLASSIFICATION_branch = Branch(
+        head=FCN(
+            input_dim=768,
+            output_dim=512,
+            num_layers=1,
+            device=device
+            ),
+        body=ClassificationHead(
+            input_dim=512,
+            output_dim=40,
+            hidden_dim=1024,
+            num_layers=4,
+            device=device
+            ),
+        device=device
+    )
+
+    # Adding Branch
+    model.add_branch(
+        name="EEG-IMG-BRAIN2IMAGE-CLASSIFICATION",
+        branch=IMAGENET_CLASSIFICATION_branch
+        )
+    
+    ## Adding Head
+    model.add_head(
+        name="EEG-IMG-BRAIN2IMAGE-CLASSIFICATION",
+        head=FCN(
+            input_dim=768,
+            output_dim=768,
+            num_layers=4,
+            device=device
+            )
+        )
     ## Dummy Code
-
-
+    
     return model
 
 def INITIALIZE_DATALOADERS(keys, bsz):
+    """
+    Initialize and return a dictionary of dataloaders based on the given keys and batch sizes.
+
+    Parameters:
+    - keys (list): A list of keys representing the different datasets.
+    - bsz (list): A list of batch sizes corresponding to each dataset.
+
+    Returns:
+    - dataloader_dict (dict): A dictionary containing the initialized dataloaders for each dataset.
+    """
     dataloader_dict = {}
     idx = 0
     for key in keys:
@@ -164,5 +220,20 @@ def INITIALIZE_DATALOADERS(keys, bsz):
             del master_eeg, master_embeds
             dataloader_dict[key] = ZuCo_dataloader
             del ZuCo_dataloader
+        elif key == "Brain2Image":
+            Brain2Image_data = load_img_data("./data/Brain2Image")
+            labels, img_net_dict = Brain2Image_data["data"], Brain2Image_data["targets"]
+            del Brain2Image_data
+            bsz=bsz[idx]
+            if bsz == 1:
+                print("[WARNING] Batch Size for Brain2Image AKA ImageNet is NOT 1. UNEXPECTED BEHAVIOR MAY OCCUR.")
+            Brain2Image_dataloader = {
+                "train": ImageNetDataloader(labels["train"], img_net_dict["train"], bsz=bsz, drop_last=True),
+                "dev": ImageNetDataloader(labels["dev"], img_net_dict["dev"], bsz=1, drop_last=True),
+                "test": ImageNetDataloader(labels["test"], img_net_dict["test"], bsz=1, drop_last=True)
+            }
+            del labels, img_net_dict
+            dataloader_dict[key] = Brain2Image_dataloader
+            del Brain2Image_dataloader
         idx += 1
     return dataloader_dict

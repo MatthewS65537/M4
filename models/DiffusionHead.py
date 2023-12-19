@@ -21,12 +21,16 @@ class DiffusionHead(nn.Module):
         inp = self.CLIPtokenizer(prompts, padding="max_length", max_length=maxlen, truncation=True, return_tensors="pt")
         return self.CLIPtext_encoder(inp.input_ids.to(self.device))[0].half()
 
-    def forward(self, emb, steps, bsz, g=7.5):
+    def forward(self, args_dict):
         '''
         g is guidance factor for diffusion model
         We likely won't change it, but leave it as an argument for now
         Maybe consider adding a dimension argument as well?
         '''
+        emb=args_dict["input_data_batch"]
+        steps=30
+        g=0.5 # guidance fact
+        bsz=emb.shape[0]
         uncond = self.text_enc([""] * bsz, emb.shape[1])
         emb = torch.cat([uncond, emb])
         self.scheduler.set_timesteps(steps)
