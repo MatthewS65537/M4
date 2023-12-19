@@ -28,7 +28,7 @@ class DiffusionHead(nn.Module):
         Maybe consider adding a dimension argument as well?
         '''
         emb=args_dict["input_data_batch"]
-        steps=30
+        steps=50
         g=0.5 # guidance fact
         bsz=emb.shape[0]
         uncond = self.text_enc([""] * bsz, emb.shape[1])

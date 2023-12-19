@@ -56,7 +56,7 @@ dsg_tasks.add_task(
 
 dsg_tasks.add_task(
     DSGTask(
-        task_name="EEG-IMG-DIFFUSION-CLASSIFICATION",
+        task_name="EEG-IMG-CLASSIFICATION",
         dataset_tag="Brain2Image",
         criterion=nn.CrossEntropyLoss(), # CE Loss for 40 classes
         optimizer=optim.Adam,
