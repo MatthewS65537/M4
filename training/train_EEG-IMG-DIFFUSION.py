@@ -33,36 +33,33 @@ def train_one_epoch(dataloader, model, optimizer, criterion, device="cuda", devi
 
         # Iterate over data.
         current_data = dataloader[phase].load_data()
-        # while not current_data["reset"]:
-            # input_embeddings, seq_len, input_masks, input_mask_invert, target_ids, target_mask, sentiment_labels, sent_level_EEG = current_data["data"]
-                
-            # input_embeddings_batch = input_embeddings.to(staging_device).float()
-            # input_masks_batch = input_masks.to(staging_device)
-            # input_mask_invert_batch = input_mask_invert.to(staging_device)
-            # target_ids_batch = target_ids.to(staging_device)
-            
-            # """replace padding ids in target_ids with -100"""
-            # target_ids_batch[target_ids_batch == tokenizer.pad_token_id] = -100 
-        
-            # optimizer.zero_grad()
+        while not current_data["reset"]:
+            eeg, image_pixels = current_data["data"]
+            latents = vae.encode(image_pixels).latent_dist.sample()
+            latents = latents * vae.config.scaling_factor
 
-            # args_dict = {
-            #     "input_data_batch" : input_embeddings_batch,
-            #     "input_masks_batch" : input_masks_batch,
-            #     "input_masks_invert" : input_mask_invert_batch,
-            #     "target_ids_batch" : target_ids_batch
-            #     }
-            
-            # outputs = model(args_dict)
-            # loss = criterion(outputs, target_ids_batch)
-            # loss.backward()
-            # optimizer.step()
+            noise = torch.randn_like(latents)
+            bsz = latents.shape[0]
+
+            timesteps = torch.randint(0, SOME_NUMBER_OF_STEPS, (bsz,), device=latents.device)
+            timesteps = timesteps.long()
+
+            noisy_latents = latents + noise
+            args_dict = {
+                "input_data_batch" : eeg,
+                "noisy_latents" : noisy_latents,
+                "train" : True
+            }
+            model_pred = model("EEG-IMG-BRAIN2IMAGE")
+            loss = nn.MSELoss()(model_pred, noise)
+            loss.backward()
+            optimizer.step()
 
             # # statistics
-            # running_loss += loss.item() * input_embeddings_batch.size(0)
-            # tot_cnt += input_embeddings_batch.size(0)
+            running_loss += loss.item() * bsz
+            tot_cnt += bsz
 
-            # current_data = dataloader[phase].load_data()
+            current_data = dataloader[phase].load_data()
         
         epoch_loss = running_loss / tot_cnt
         results[phase] = epoch_loss
@@ -85,5 +82,3 @@ if __name__ == "__main__":
         keys=["Brain2Image"],
         bsz=[1]
     )
-
-    

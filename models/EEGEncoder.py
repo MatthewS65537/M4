@@ -58,18 +58,15 @@ class EEGEncoder(nn.Module):
             input_data_batch = args_dict["input_data_batch"]
             input_masks_invert = args_dict["input_masks_invert"]
             encoded_embedding = self.heads[mode](input_data_batch)
-            encoded_embedding = self.encoder(encoded_embedding,src_key_padding_mask=input_masks_invert)
+            encoded_embedding = self.encoder(encoded_embedding, src_key_padding_mask=input_masks_invert)
             encoded_embedding = F.relu(self.fc_proj(encoded_embedding))
             return encoded_embedding
 
         elif mode == "EEG-IMG-BRAIN2IMAGE":
             input_data_batch = args_dict["input_data_batch"]
             encoded_embedding = self.heads[mode](input_data_batch)
+            encoded_embedding = self.encoder(encoded_embedding)
             pool_result = args_dict["pool_result"]
             if pool_result:
-                pooler = torch.zeros(encoded_embedding.shape[0:1]+encoded_embedding.shape[-1:]).to(device)
-                for i in range(encoded_embedding.shape[0]):
-                  for j in range(encoded_embedding.shape[-2]):
-                      pooler[i] += encoded_embedding[i][j][:]
-                  pooler[i] /= encoded_embedding.shape[-2]
-                return pooler
+                encoded_embedding = torch.mean(encoded_embedding, dim=1)
+            return encoded_embedding

@@ -27,26 +27,34 @@ class DiffusionHead(nn.Module):
         We likely won't change it, but leave it as an argument for now
         Maybe consider adding a dimension argument as well?
         '''
-        emb=args_dict["input_data_batch"]
-        steps=50
-        g=0.5 # guidance fact
-        bsz=emb.shape[0]
-        uncond = self.text_enc([""] * bsz, emb.shape[1])
-        emb = torch.cat([uncond, emb])
-        self.scheduler.set_timesteps(steps)
-        latents = latents.to(self.device).half() * self.scheduler.init_noise_sigma
+        if "train" in args_dict and args_dict["train"]:
+            emb=args_dict["input_data_batch"]
+            g=7.5
+            timesteps=args_dict["timesteps"]
+            noisy_latents=args_dict["noisy_latents"]
+            res=self.unet(noisy_latents, timesteps, emb).sample
+            return res
+        else:
+            emb=args_dict["input_data_batch"]
+            steps=50
+            g=7.5 # guidance factor
+            bsz=emb.shape[0]
+            uncond = self.text_enc([""] * bsz, emb.shape[1])
+            emb = torch.cat([uncond, emb])
+            self.scheduler.set_timesteps(steps)
+            latents = latents.to(self.device).half() * self.scheduler.init_noise_sigma
 
-        for i,ts in enumerate(self.scheduler.timesteps):
-            # We need to scale the i/p latents to match the variance
-            inp = self.scheduler.scale_model_input(torch.cat([latents] * 2), ts)
+            for i,ts in enumerate(self.scheduler.timesteps):
+                # We need to scale the i/p latents to match the variance
+                inp = self.scheduler.scale_model_input(torch.cat([latents] * 2), ts)
 
-            # Predicting noise residual using U-Net
-            u,t = self.unet(inp, ts, encoder_hidden_states=emb).sample.chunk(2)
+                # Predicting noise residual using U-Net
+                u,t = self.unet(inp, ts, encoder_hidden_states=emb).sample.chunk(2)
 
-            # Performing Guidance
-            pred = u + g*(t-u)
+                # Performing Guidance
+                pred = u + g*(t-u)
 
-            # Conditioning  the latents
-            latents = self.scheduler.step(pred, ts, latents).prev_sample
+                # Conditioning  the latents
+                latents = self.scheduler.step(pred, ts, latents).prev_sample
 
-        return latents
+            return latents
