@@ -1,3 +1,4 @@
+# EEG-IMG-CLASSIFICATION
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,7 +7,7 @@ def train(args_dict):
     dataloader = args_dict["dataloader"]
     model = args_dict["model"]
     optimizer = args_dict["optimizer"]
-    tokenizer = args_dict["tokenizer"]
+    criterion = args_dict["criterion"]
     device = args_dict["device"] if "device" in args_dict else "cuda"
     device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
     staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
@@ -26,42 +27,31 @@ def train(args_dict):
         # Iterate over data.
         current_data = dataloader[phase].load_data()
         while not current_data["reset"]:
-            input_embeddings, seq_len, input_masks, input_mask_invert, target_ids, target_mask, sentiment_labels, sent_level_EEG = current_data["data"]
-                
-            input_embeddings_batch = input_embeddings.to(staging_device).float()
-            input_masks_batch = input_masks.to(staging_device)
-            input_mask_invert_batch = input_mask_invert.to(staging_device)
-            target_ids_batch = target_ids.to(staging_device)
-            
-            """replace padding ids in target_ids with -100"""
-            target_ids_batch[target_ids_batch == tokenizer.pad_token_id] = -100 
+            eegs = current_data
         
             optimizer.zero_grad()
 
             args_dict = {
-                "input_data_batch" : input_embeddings_batch,
-                "input_masks_batch" : input_masks_batch,
-                "input_masks_invert" : input_mask_invert_batch,
-                "target_ids_batch" : target_ids_batch
+                "input_data_batch" : eegs
                 }
             
-            seq2seqLMoutput = model(
+            output = model(
                 mode="EEG-TEXT-BART",
                 args_dict=args_dict,
                 staging_device=staging_device
                 )
             
             # Use the BART language modeling loss
-            loss = seq2seqLMoutput.loss
+            loss = criterion(output, expected)
             
             # Backward + Optimize only if in training phase
             if phase == 'train':
                 if device_ids == None:
-                        loss.backward()
-                        optimizer.step()
+                    loss.backward()
+                    optimizer.step()
                 else:
-                        loss.mean().backward()
-                        optimizer.step()
+                    loss.mean().backward()
+                    optimizer.step()
 
             # Compute stats
             if device_ids == None:

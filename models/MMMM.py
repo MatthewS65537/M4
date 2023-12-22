@@ -7,6 +7,7 @@ sys.path.append("./models")
 
 from FCN import *
 from Branch import *
+from DualEncoder import *
 
 class MMMM(nn.Module):
     """
@@ -36,6 +37,7 @@ class MMMM(nn.Module):
     def __init__(
         self,
         eeg_encoder,
+        dual_encoder,
         meta_head=FCN(
             input_dim=768,
             output_dim=768,
@@ -46,6 +48,7 @@ class MMMM(nn.Module):
     ):
         super(MMMM, self).__init__()
         self.eeg_encoder = eeg_encoder
+        self.dual_encoder = dual_encoder
         self.branches = nn.ModuleDict()
         self.meta_head = meta_head.to(device)
         self.heads = nn.ModuleDict()
@@ -118,6 +121,15 @@ class MMMM(nn.Module):
                 return out
         elif mode == "EEG-IMG-CLASSIFICATION":
             encoded_embedding = self.eeg_encoder("EEG-IMG-BRAIN2IMAGE", args_dict)
+            if meta:
+                encoded_embedding = self.meta_head(encoded_embedding)
+            else:
+                encoded_embedding = self.heads[mode](encoded_embedding)
+            args_dict["input_data_batch"] = encoded_embedding
+            out = self.branches[mode](mode, args_dict, staging_device)
+            return encoded_embedding
+        elif mode == "EEG-SENTIMENT-ANALYSIS":
+            encoded_embedding = self.eeg_encoder("EEG-TEXT-BART", args_dict)
             if meta:
                 encoded_embedding = self.meta_head(encoded_embedding)
             else:

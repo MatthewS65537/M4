@@ -41,7 +41,7 @@ def train_one_epoch(dataloader, model, optimizer, criterion, device="cuda", devi
             noise = torch.randn_like(latents)
             bsz = latents.shape[0]
 
-            timesteps = torch.randint(0, SOME_NUMBER_OF_STEPS, (bsz,), device=latents.device)
+            timesteps = torch.randint(0, 30, (bsz,), device=latents.device)
             timesteps = timesteps.long()
 
             noisy_latents = latents + noise

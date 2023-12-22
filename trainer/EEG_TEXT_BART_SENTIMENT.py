@@ -7,6 +7,7 @@ def train(args_dict):
     model = args_dict["model"]
     optimizer = args_dict["optimizer"]
     tokenizer = args_dict["tokenizer"]
+    criterion = args_dict["criterion"]
     device = args_dict["device"] if "device" in args_dict else "cuda"
     device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
     staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
@@ -45,14 +46,14 @@ def train(args_dict):
                 "target_ids_batch" : target_ids_batch
                 }
             
-            seq2seqLMoutput = model(
+            output = model(
                 mode="EEG-TEXT-BART",
                 args_dict=args_dict,
                 staging_device=staging_device
                 )
             
             # Use the BART language modeling loss
-            loss = seq2seqLMoutput.loss
+            loss = criterion(output, target)
             
             # Backward + Optimize only if in training phase
             if phase == 'train':
