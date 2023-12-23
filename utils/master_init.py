@@ -58,9 +58,17 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             )
         )
 
+    CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
+    # image_encoder = CLIPImageModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
+        
     ### CREATE MMMM MODEL ###
     model = MMMM(
         eeg_encoder=eeg_enc,
+        CLIP_text_encoder = CLIPtext_encoder,
+        BART_text_encoder = None,
+        image_encoder = None,
+        dual_encoder = None,
+        fusion_encoder = None,
         device=device,
         )
 
@@ -118,7 +126,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
 
     # Initializing CLIP Pretrains
     CLIPtokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
-    CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
+    # CLIPtext_encoder is already initialized
+    # CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
 
     # Create Branch for EEG-IMG-BRAIN2IMAGE
     BRAIN2IMAGE_branch = Branch(
@@ -189,7 +198,36 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             device=device
             )
         )
-    ## Dummy Code
+    
+    SENTIMENT_branch = Branch(
+        head=FCN(
+            input_dim=768,
+            output_dim=512,
+            num_layers=1,
+            device=device
+            ),
+        body=ClassificationHead(
+            input_dim=512,
+            output_dim=3,
+            hidden_dim=1024,
+            num_layers=4,
+            device=device
+            ),
+        device=device
+    )
+    model.add_branch(
+        name="EEG-TEXT-BART-SENTIMENT",
+        branch=SENTIMENT_branch
+    )
+    model.add_head(
+        name="EEG-TEXT-BART-SENTIMENT",
+        head=FCN(
+            input_dim=768,
+            output_dim=768,
+            num_layers=4,
+            device=device
+        )
+    )
     
     return model
 
@@ -225,12 +263,12 @@ def INITIALIZE_DATALOADERS(keys, bsz):
             labels, img_net_dict = Brain2Image_data["data"], Brain2Image_data["targets"]
             del Brain2Image_data
             bsz=bsz[idx]
-            if bsz == 1:
+            if not bsz == 1:
                 print("[WARNING] Batch Size for Brain2Image AKA ImageNet is NOT 1. UNEXPECTED BEHAVIOR MAY OCCUR.")
             Brain2Image_dataloader = {
-                "train": ImageNetDataloader(labels["train"], img_net_dict["train"], bsz=bsz, drop_last=True),
-                "dev": ImageNetDataloader(labels["dev"], img_net_dict["dev"], bsz=1, drop_last=True),
-                "test": ImageNetDataloader(labels["test"], img_net_dict["test"], bsz=1, drop_last=True)
+                "train": ImageNetDataloader(labels["train"], img_net_dict, bsz=bsz, drop_last=True),
+                "dev": ImageNetDataloader(labels["dev"], img_net_dict, bsz=1, drop_last=True),
+                "test": ImageNetDataloader(labels["test"], img_net_dict, bsz=1, drop_last=True)
             }
             del labels, img_net_dict
             dataloader_dict[key] = Brain2Image_dataloader

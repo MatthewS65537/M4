@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 
 class ImageNetDataloader():
-    def __init__(self, labeled_eeg, image_net_dict, bsz=1, drop_last = True):
+    def __init__(self, labeled_eeg, image_net_dict, bsz=1, drop_last=True):
         super(ImageNetDataloader, self).__init__()
         self.labeled_eeg = labeled_eeg
         self.image_net_dict = image_net_dict
@@ -21,10 +21,17 @@ class ImageNetDataloader():
         if (self.ptr > (self.dataset_size // self.bsz * self.bsz) and self.drop_last) or (self.ptr > self.dataset_size and not self.drop_last):
             self.reset()
             self.ptr += self.bsz
-            
+        
+        labels = [self.labeled_eeg["labels"][i] for i in range(self.ptr - self.bsz, min(self.ptr, self.dataset_size))]
         target = [self.image_net_dict[self.labeled_eeg["labels"][i]] for i in range(self.ptr - self.bsz, min(self.ptr, self.dataset_size))]
         sz = min(self.ptr, self.dataset_size) - (self.ptr - self.bsz)
-        return {"data" : self.labeled_eeg["eeg"][self.ptr-self.bsz:min(self.ptr, self.dataset_size)], "target" : target, "size" : sz, "reset" : self.is_reset}
+        return {"data" : self.labeled_eeg["eeg"][self.ptr-self.bsz:min(self.ptr, self.dataset_size)], "target" : target, "size" : sz, "reset" : self.is_reset, "labels" : labels}
+
+    def query_data(self):
+        return self.image_net_dict
+
+    def query_labels(self):
+        return self.labeled_eeg["labels"]
 
     def reset(self):
         self.ptr = 0

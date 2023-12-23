@@ -63,9 +63,9 @@ class Branch(nn.Module):
             encoded_embedding = self.head(input_data_batch)
             out = self.body(input_data_batch)
             return out # Return predicted probabilities for each class
-        elif mode == "EEG-SENTIMENT-ANALYSIS": # Same as EEG-IMG-CLASSIFICATION
+        elif mode == "EEG-TEXT-BART-SENTIMENT": # Same as EEG-IMG-CLASSIFICATION
             input_data_batch = args_dict["input_data_batch"]
             # Body is ClassificationHead()
             encoded_embedding = self.head(input_data_batch)
-            out = self.body(input_data_batch)
+            out = self.body(encoded_embedding)
             return out # Return predicted probabilities for each class
