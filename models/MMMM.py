@@ -38,6 +38,10 @@ class MMMM(nn.Module):
         self,
         eeg_encoder,
         dual_encoder,
+        BART_text_encoder,
+        CLIP_text_encoder,
+        image_encoder,
+        fusion_encoder,
         meta_head=FCN(
             input_dim=768,
             output_dim=768,
@@ -47,8 +51,12 @@ class MMMM(nn.Module):
         device_ids=None
     ):
         super(MMMM, self).__init__()
+        self.BART_text_encoder = BART_text_encoder
+        self.CLIP_text_encoder = CLIP_text_encoder
+        self.image_encoder = image_encoder
         self.eeg_encoder = eeg_encoder
         self.dual_encoder = dual_encoder
+        self.fusion_encoder = fusion_encoder
         self.branches = nn.ModuleDict()
         self.meta_head = meta_head.to(device)
         self.heads = nn.ModuleDict()

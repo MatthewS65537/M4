@@ -47,11 +47,12 @@ def train(args_dict):
                 }
             
             output = model(
-                mode="EEG-TEXT-BART",
+                mode="EEG-TEXT-BART-SENTIMENT",
                 args_dict=args_dict,
                 staging_device=staging_device
                 )
             
+            target = torch.zeros(3)
             # Use the BART language modeling loss
             loss = criterion(output, target)
             
