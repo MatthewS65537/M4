@@ -13,4 +13,6 @@ def load_img_data(dir="./data/Brain2Image"):
         image_eeg_labels = pickle.load(f)
     with open(f"{dir}/image_net_dict.pkl", "rb") as f:
         img_net_dict = pickle.load(f)
-    return {"data" : image_eeg_labels, "targets" : img_net_dict}
+    with open(f"{dir}/label_dict.pkl", "rb") as f:
+        label_dict = pickle.load(f)
+    return {"data" : image_eeg_labels, "targets" : img_net_dict, "labels" : label_dict}

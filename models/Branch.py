@@ -57,11 +57,11 @@ class Branch(nn.Module):
             # Body is DiffusionHead()
             out = self.body(args_dict)
             return out
-        elif mode == "EEG-IMG-CLASSIFICATION":
+        elif mode == "EEG-IMG-BRAIN2IMAGE-CLASSIFICATION":
             input_data_batch = args_dict["input_data_batch"]
             # Body is ClassificationHead()
             encoded_embedding = self.head(input_data_batch)
-            out = self.body(input_data_batch)
+            out = self.body(encoded_embedding)
             return out # Return predicted probabilities for each class
         elif mode == "EEG-TEXT-BART-SENTIMENT": # Same as EEG-IMG-CLASSIFICATION
             input_data_batch = args_dict["input_data_batch"]

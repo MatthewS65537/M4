@@ -127,7 +127,7 @@ class MMMM(nn.Module):
                 args_dict["input_data_batch"] = encoded_embedding
                 out = self.branches[mode](mode, args_dict, staging_device)
                 return out
-        elif mode == "EEG-IMG-CLASSIFICATION":
+        elif mode == "EEG-IMG-BRAIN2IMAGE-CLASSIFICATION":
             encoded_embedding = self.eeg_encoder("EEG-IMG-BRAIN2IMAGE", args_dict)
             if meta:
                 encoded_embedding = self.meta_head(encoded_embedding)
@@ -135,7 +135,7 @@ class MMMM(nn.Module):
                 encoded_embedding = self.heads[mode](encoded_embedding)
             args_dict["input_data_batch"] = encoded_embedding
             out = self.branches[mode](mode, args_dict, staging_device)
-            return encoded_embedding
+            return out
         elif mode == "EEG-TEXT-BART-SENTIMENT":
             encoded_embedding = self.eeg_encoder("EEG-TEXT-BART", args_dict)
             if meta:
@@ -145,3 +145,5 @@ class MMMM(nn.Module):
             args_dict["input_data_batch"] = encoded_embedding
             out = self.branches[mode](mode, args_dict, staging_device)
             return out
+        else:
+            print(f"Mode {mode} not found")

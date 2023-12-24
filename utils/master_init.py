@@ -260,15 +260,15 @@ def INITIALIZE_DATALOADERS(keys, bsz):
             del ZuCo_dataloader
         elif key == "Brain2Image":
             Brain2Image_data = load_img_data("./data/Brain2Image")
-            labels, img_net_dict = Brain2Image_data["data"], Brain2Image_data["targets"]
+            labels, img_net_dict, label_dict = Brain2Image_data["data"], Brain2Image_data["targets"], Brain2Image_data["labels"]
             del Brain2Image_data
             bsz=bsz[idx]
             if not bsz == 1:
                 print("[WARNING] Batch Size for Brain2Image AKA ImageNet is NOT 1. UNEXPECTED BEHAVIOR MAY OCCUR.")
             Brain2Image_dataloader = {
-                "train": ImageNetDataloader(labels["train"], img_net_dict, bsz=bsz, drop_last=True),
-                "dev": ImageNetDataloader(labels["dev"], img_net_dict, bsz=1, drop_last=True),
-                "test": ImageNetDataloader(labels["test"], img_net_dict, bsz=1, drop_last=True)
+                "train": ImageNetDataloader(labels["train"], img_net_dict, label_dict, bsz=bsz, drop_last=True),
+                "dev": ImageNetDataloader(labels["dev"], img_net_dict, label_dict, bsz=1, drop_last=True),
+                "test": ImageNetDataloader(labels["test"], img_net_dict, label_dict, bsz=1, drop_last=True)
             }
             del labels, img_net_dict
             dataloader_dict[key] = Brain2Image_dataloader
