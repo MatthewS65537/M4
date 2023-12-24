@@ -114,9 +114,6 @@ def evaluate(args_dict):
         confusion_matrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
         model.eval()     # Set model to evaluate mode
 
-        running_loss = 0.0
-        tot_cnt = 0
-
         # Iterate over data.
         current_data = dataloader[phase].load_data()
         while not current_data["reset"]:
