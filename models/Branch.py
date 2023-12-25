@@ -9,7 +9,7 @@ from FCN import *
 from EEGEncoder import *
 
 class Branch(nn.Module):
-    def __init__(self, head, body, device="cuda", device_ids=None):
+    def __init__(self, head, body, device="cuda", device_ids=None, dtype=torch.float16):
         """
         Initializes a Branch module.
 
@@ -20,11 +20,12 @@ class Branch(nn.Module):
             device_ids (list, optional): List of device IDs for data parallelism. Defaults to None.
         """
         super(Branch, self).__init__()
-        self.head = head
-        self.body = body
+        self.head = head.to(dtype=dtype)
+        self.body = body.to(dtype=dtype)
         self.to(device)
         self.device = device
         self.device_ids = device_ids
+        self.dtype = dtype
 
     def forward(self, mode, args_dict, staging_device="cuda:0"):
         """
@@ -51,7 +52,7 @@ class Branch(nn.Module):
                 labels = target_ids_batch
                 )
             return out
-        elif mode == "EEG-IMG-BRAIN2IMAGE":
+        elif mode == "EEG-IMG-DIFFUSION":
             input_data_batch = args_dict["input_data_batch"]
             encoded_embedding = self.head(input_data_batch)
             # Body is DiffusionHead()

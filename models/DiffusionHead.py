@@ -28,10 +28,11 @@ class DiffusionHead(nn.Module):
         Maybe consider adding a dimension argument as well?
         '''
         if "train" in args_dict and args_dict["train"]:
-            emb=args_dict["input_data_batch"]
+            emb=args_dict["input_data_batch"].half()
+            emb=emb.reshape(1, 1, 768)
             g=7.5
             timesteps=args_dict["timesteps"]
-            noisy_latents=args_dict["noisy_latents"]
+            noisy_latents=args_dict["noisy_latents"].half()
             res=self.unet(noisy_latents, timesteps, emb).sample
             return res
         else:

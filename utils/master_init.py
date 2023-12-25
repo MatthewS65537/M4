@@ -11,6 +11,7 @@ from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig
 from diffusers import UNet2DConditionModel, LMSDiscreteScheduler
 from load_data import *
 from dataloader import *
+import torch
 
 def INITIALIZE_MODEL(device="cuda", device_ids=None):
     """
@@ -26,6 +27,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
     Raises:
         None
     """
+    torch.set_default_dtype(torch.float16)
+    
     ### SET UP EEG ENCODER###
     eeg_enc = EEGEncoder(
         enc_feat=1024,
@@ -34,6 +37,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
         enc_dim_ff=2048,
         num_enc_layers=8,
         device=device,
+        dtype=torch.float16
         )
 
     eeg_enc.add_head(
@@ -58,7 +62,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             )
         )
 
-    CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
+    CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(device, dtype=torch.float16)
     # image_encoder = CLIPImageModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
         
     ### CREATE MMMM MODEL ###
@@ -70,11 +74,12 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
         dual_encoder = None,
         fusion_encoder = None,
         device=device,
+        dtype=torch.float16
         )
 
     ### LOAD EEG-TEXT-BART ###
     BART_tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
-    BART_pretrained = BartForConditionalGeneration.from_pretrained('facebook/bart-large')
+    BART_pretrained = BartForConditionalGeneration.from_pretrained('facebook/bart-large').to(device, dtype=torch.float16)
     
     if not device_ids == None:
         BART_pretrained = nn.DataParallel(BART_pretrained, device_ids=device_ids)
@@ -88,7 +93,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             device=device
             ),
         body=BART_pretrained,
-        device=device
+        device=device,
+        dtype=torch.float16
         )
 
     # Adding Branch
@@ -129,8 +135,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
     # CLIPtext_encoder is already initialized
     # CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
 
-    # Create Branch for EEG-IMG-BRAIN2IMAGE
-    BRAIN2IMAGE_branch = Branch(
+    # Create Branch for EEG-IMG-DIFFUSION
+    DIFFUSION_branch = Branch(
         head=FCN(
             input_dim=768,
             output_dim=768,
@@ -144,18 +150,19 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             text_encoder=CLIPtext_encoder,
             device=device
             ),
-        device=device
+        device=device,
+        dtype=torch.float16
         )
 
     # Adding Branch
     model.add_branch(
-        name="EEG-IMG-BRAIN2IMAGE",
-        branch=BRAIN2IMAGE_branch,
+        name="EEG-IMG-DIFFUSION",
+        branch=DIFFUSION_branch,
         )
 
     # Adding Head
     model.add_head(
-        name="EEG-IMG-BRAIN2IMAGE",
+        name="EEG-IMG-DIFFUSION",
         head=FCN(
             input_dim=768,
             output_dim=768,
@@ -179,7 +186,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             num_layers=4,
             device=device
             ),
-        device=device
+        device=device,
+        dtype=torch.float16
     )
 
     # Adding Branch
@@ -213,7 +221,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             num_layers=4,
             device=device
             ),
-        device=device
+        device=device,
+        dtype=torch.float16
     )
     model.add_branch(
         name="EEG-TEXT-BART-SENTIMENT",
