@@ -48,17 +48,19 @@ class MMMM(nn.Module):
             num_layers=4,
         ),
         device="cuda",
-        device_ids=None
+        device_ids=None,
+        dtype=torch.float16
     ):
         super(MMMM, self).__init__()
-        self.BART_text_encoder = BART_text_encoder
-        self.CLIP_text_encoder = CLIP_text_encoder
-        self.image_encoder = image_encoder
-        self.eeg_encoder = eeg_encoder
-        self.dual_encoder = dual_encoder
-        self.fusion_encoder = fusion_encoder
+        self.dtype = dtype
+        self.BART_text_encoder = None if BART_text_encoder == None else BART_text_encoder.to(dtype=dtype)
+        self.CLIP_text_encoder = None if CLIP_text_encoder == None else CLIP_text_encoder.to(dtype=dtype)
+        self.image_encoder = None if image_encoder == None else image_encoder.to(dtype=dtype)
+        self.eeg_encoder = eeg_encoder.to(dtype=dtype)
+        self.dual_encoder = None if dual_encoder == None else dual_encoder.to(dtype=dtype)
+        self.fusion_encoder = None if fusion_encoder == None else fusion_encoder.to(dtype=dtype)
         self.branches = nn.ModuleDict()
-        self.meta_head = meta_head.to(device)
+        self.meta_head = meta_head.to(dtype=dtype)
         self.heads = nn.ModuleDict()
         self.device = device
         self.device_ids = device_ids
@@ -74,7 +76,7 @@ class MMMM(nn.Module):
             branch (nn.Module): The branch module to be added.
 
         """
-        self.branches[name] = branch
+        self.branches[name] = branch.to(self.device, dtype=self.dtype)
     
     def add_head(self, name, head):
         """
@@ -85,7 +87,7 @@ class MMMM(nn.Module):
             head (nn.Module): The head module to be added.
 
         """
-        self.heads[name] = head
+        self.heads[name] = head.to(self.device, dtype=self.dtype)
 
     def forward(self, mode, args_dict, meta=False, staging_device="cuda:0"):
         """

@@ -37,7 +37,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
         enc_dim_ff=2048,
         num_enc_layers=8,
         device=device,
-        ).to(dtype=torch.float16)
+        dtype=torch.float16
+        )
 
     eeg_enc.add_head(
         name="EEG-TEXT-BART",
@@ -47,7 +48,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             hidden_dim=1024,
             num_layers=1,
             device=device
-            ).to(dtype=torch.float16)
+            )
         )
 
     eeg_enc.add_head(
@@ -58,7 +59,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             hidden_dim=1024,
             num_layers=1,
             device=device
-            ).to(dtype=torch.float16)
+            )
         )
 
     CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(device, dtype=torch.float16)
@@ -73,6 +74,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
         dual_encoder = None,
         fusion_encoder = None,
         device=device,
+        dtype=torch.float16
         )
 
     ### LOAD EEG-TEXT-BART ###
@@ -91,13 +93,14 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             device=device
             ),
         body=BART_pretrained,
-        device=device
+        device=device,
+        dtype=torch.float16
         )
 
     # Adding Branch
     model.add_branch(
         name="EEG-TEXT-BART",
-        branch=BART_branch.to(dtype=torch.float16)
+        branch=BART_branch
         )
 
     # Adding Head
@@ -108,7 +111,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             output_dim=768,
             num_layers=4,
             device=device
-        ).to(dtype=torch.float16)
+        )
     )
     
     for name, param in BART_branch.named_parameters():
@@ -147,8 +150,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             text_encoder=CLIPtext_encoder,
             device=device
             ),
-        device=device
-        ).to(dtype=torch.float16)
+        device=device,
+        dtype=torch.float16
+        )
 
     # Adding Branch
     model.add_branch(
@@ -164,7 +168,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             output_dim=768,
             num_layers=4,
             device=device
-            ).to(dtype=torch.float16)
+            )
     )
 
     ### LOAD CLASSIFICATION HEADS ###
@@ -182,8 +186,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             num_layers=4,
             device=device
             ),
-        device=device
-    ).to(dtype=torch.float16)
+        device=device,
+        dtype=torch.float16
+    )
 
     # Adding Branch
     model.add_branch(
@@ -199,7 +204,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             output_dim=768,
             num_layers=4,
             device=device
-            ).to(dtype=torch.float16)
+            )
         )
     
     SENTIMENT_branch = Branch(
@@ -216,11 +221,12 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             num_layers=4,
             device=device
             ),
-        device=device
+        device=device,
+        dtype=torch.float16
     )
     model.add_branch(
         name="EEG-TEXT-BART-SENTIMENT",
-        branch=SENTIMENT_branch.to(dtype=torch.float16)
+        branch=SENTIMENT_branch
     )
     model.add_head(
         name="EEG-TEXT-BART-SENTIMENT",
@@ -229,7 +235,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             output_dim=768,
             num_layers=4,
             device=device
-        ).to(dtype=torch.float16)
+        )
     )
     
     return model

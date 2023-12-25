@@ -22,14 +22,15 @@ class EEGEncoder(nn.Module):
         device_ids (list): List of device IDs for multi-GPU training (default: None).
     """
 
-    def __init__(self, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8, device="cuda", device_ids=None):
+    def __init__(self, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8, device="cuda", device_ids=None, dtype=torch.float16):
         super(EEGEncoder, self).__init__()
         self.device = device
         self.heads = nn.ModuleDict()
-        self.encoder_layer = nn.TransformerEncoderLayer(d_model=enc_feat, nhead=enc_nhead, dim_feedforward=enc_dim_ff, batch_first=True)
-        self.encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=num_enc_layers)
+        self.encoder_layer = nn.TransformerEncoderLayer(d_model=enc_feat, nhead=enc_nhead, dim_feedforward=enc_dim_ff, batch_first=True).to(dtype=dtype)
+        self.encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=num_enc_layers).to(dtype=dtype)
         self.fc_proj = nn.Linear(enc_feat, dec_emb_sz)
         self.device_ids = device_ids
+        self.dtype = dtype
         self.to(device)
         
     def add_head(self, name, head):
@@ -40,7 +41,7 @@ class EEGEncoder(nn.Module):
             name (str): The name of the head.
             head (nn.Module): The head module to add.
         """
-        self.heads[name] = head
+        self.heads[name] = head.to(device=self.device, dtype=self.dtype)
 
     def forward(self, mode, args_dict, staging_device="cuda:0"):
         """
