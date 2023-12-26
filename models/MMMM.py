@@ -104,7 +104,13 @@ class MMMM(nn.Module):
             The output of the forward pass.
 
         """
-        if mode == "EEG-TEXT-BART":
+        if mode == "PRETRAIN-EEG-TEXT-CLIP-MATCHING":
+            encoded_embedding = self.eeg_encoder("EEG-TEXT-BART", args_dict, staging_device, debug)
+            return encoded_embedding
+        elif mode == "PRETRAIN-EEG-IMG-CLIP-MATCHING":
+            encoded_embedding = self.eeg_encoder("EEG-IMG-BRAIN2IMAGE", args_dict, staging_device, debug)
+            return encoded_embedding
+        elif mode == "EEG-TEXT-BART":
             encoded_embedding = self.eeg_encoder(mode, args_dict, staging_device, debug)
             if debug:
                 print("ENCODER GOOD")
