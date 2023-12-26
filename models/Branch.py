@@ -22,12 +22,14 @@ class Branch(nn.Module):
         super(Branch, self).__init__()
         self.head = head.to(dtype=dtype)
         self.body = body.to(dtype=dtype)
-        self.to(device)
         self.device = device
+        if not device == None:
+            self.to(device)
         self.device_ids = device_ids
         self.dtype = dtype
+        self.to(dtype=dtype)
 
-    def forward(self, mode, args_dict, staging_device="cuda:0"):
+    def forward(self, mode, args_dict, staging_device="cuda:0", debug=False):
         """
         Forward pass of the Branch module.
 
@@ -44,6 +46,8 @@ class Branch(nn.Module):
             input_masks_batch = args_dict["input_masks_batch"]
             target_ids_batch = args_dict["target_ids_batch"]
             encoded_embedding = self.head(input_data_batch)
+            if debug:
+                print("BRANCH HEAD GOOD")
             # Body is pretrained BART
             out = self.body(
                 inputs_embeds = encoded_embedding,
@@ -51,6 +55,8 @@ class Branch(nn.Module):
                 return_dict = True,
                 labels = target_ids_batch
                 )
+            if debug:
+                print("BRANCH BODY GOOD")
             return out
         elif mode == "EEG-IMG-DIFFUSION":
             input_data_batch = args_dict["input_data_batch"]

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 # Fully Connected Network
 # Used as task head, adapter, projection, etc.
 class FCN(nn.Module):
-    def __init__(self, input_dim=512, output_dim=1024, hidden_dim=1024, num_layers=2, device="cuda"):
+    def __init__(self, input_dim=512, output_dim=1024, hidden_dim=1024, num_layers=2, device=None, dtype=torch.float16):
         """
         Fully Connected Network (FCN) model.
 
@@ -24,7 +24,10 @@ class FCN(nn.Module):
         self.output_layer = nn.Linear(hidden_dim, output_dim)
         self.activation = nn.ReLU()
         self.device = device
-        self.to(device)
+        if not device == None:
+            self.to(device)
+        self.dtype = dtype
+        self.to(dtype=dtype)
 
     def forward(self, x, staging_device="cuda:0"):
         """

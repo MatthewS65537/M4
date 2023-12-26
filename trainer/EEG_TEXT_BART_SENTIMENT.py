@@ -50,9 +50,9 @@ def train(args_dict):
             for i in range(input_embeddings.shape[0]):
                 target[i][sentiment_labels[i]] = 1.0
 
-            input_embeddings_batch = input_embeddings.to(staging_device).float()
-            input_masks_batch = input_masks.to(staging_device)
-            input_mask_invert_batch = input_mask_invert.to(staging_device)
+            input_embeddings_batch = input_embeddings.to(staging_device, dtype=torch.float16)
+            input_masks_batch = input_masks.to(staging_device, dtype=torch.float16)
+            input_mask_invert_batch = input_mask_invert.to(staging_device, dtype=torch.float16)
             target_ids_batch = target_ids.to(staging_device)
 
             """replace padding ids in target_ids with -100"""

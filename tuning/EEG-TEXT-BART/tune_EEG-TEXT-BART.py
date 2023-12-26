@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
     # Configure Model
     device="cuda"
-    device_ids=[0]
+    device_ids=[0,1,2,3]
     seed_val = 1066
     
     np.random.seed(seed_val)
@@ -138,7 +138,7 @@ if __name__ == "__main__":
         torch.save(model.state_dict(), BASE_PATH)
     print("[INFO] Configured BASE model.")
 
-    bsz = 128 * len(device_ids)
+    bsz = 512
     # Set up dataloaders
     dataloaders = INITIALIZE_DATALOADERS(
         keys=["ZuCo-BART"],
