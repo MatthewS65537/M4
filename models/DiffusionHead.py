@@ -3,15 +3,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DiffusionHead(nn.Module):
-    def __init__(self, scheduler, unet, tokenizer, text_encoder, device):
+    def __init__(self, scheduler, unet, tokenizer, text_encoder, device=None, dtype=torch.float16):
         super(DiffusionHead, self).__init__()
         self.DiffusionHead = scheduler
         self.unet = unet
         self.device = device
         self.CLIPtokenizer = tokenizer
         self.CLIPtext_encoder = text_encoder
-
-        self.to(device)
+        if not device == None:
+            self.to(device)
+        self.dtype = dtype
+        self.to(dtype=dtype)
 
     def text_enc(self, prompts, maxlen=None):
         '''
@@ -19,7 +21,7 @@ class DiffusionHead(nn.Module):
         '''
         if maxlen is None: maxlen = self.CLIPtokenizer.model_max_length
         inp = self.CLIPtokenizer(prompts, padding="max_length", max_length=maxlen, truncation=True, return_tensors="pt")
-        return self.CLIPtext_encoder(inp.input_ids.to(self.device))[0].half()
+        return self.CLIPtext_encoder(inp.input_ids)[0].to(torch.float16)
 
     def forward(self, args_dict):
         '''
@@ -28,11 +30,11 @@ class DiffusionHead(nn.Module):
         Maybe consider adding a dimension argument as well?
         '''
         if "train" in args_dict and args_dict["train"]:
-            emb=args_dict["input_data_batch"].half()
+            emb=args_dict["input_data_batch"].to(torch.float16)
             emb=emb.reshape(1, 1, 768)
             g=7.5
             timesteps=args_dict["timesteps"]
-            noisy_latents=args_dict["noisy_latents"].half()
+            noisy_latents=args_dict["noisy_latents"].to(torch.float16)
             res=self.unet(noisy_latents, timesteps, emb).sample
             return res
         else:
@@ -43,7 +45,7 @@ class DiffusionHead(nn.Module):
             uncond = self.text_enc([""] * bsz, emb.shape[1])
             emb = torch.cat([uncond, emb])
             self.scheduler.set_timesteps(steps)
-            latents = latents.to(self.device).half() * self.scheduler.init_noise_sigma
+            latents = latents.to(dtype=torch.float16) * self.scheduler.init_noise_sigma
 
             for i,ts in enumerate(self.scheduler.timesteps):
                 # We need to scale the i/p latents to match the variance

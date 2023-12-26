@@ -9,3 +9,4 @@ pip install -q rouge
 pip install -q diffusers
 pip install -q tensorboard
 pip install -q tqdm
+pip install -q accelerate

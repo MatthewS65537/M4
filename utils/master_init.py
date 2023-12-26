@@ -27,7 +27,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
     Raises:
         None
     """
-    torch.set_default_dtype(torch.float16)
+#     torch.set_default_dtype(torch.float16)
     
     ### SET UP EEG ENCODER###
     eeg_enc = EEGEncoder(
@@ -62,7 +62,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             )
         )
 
-    CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(device, dtype=torch.float16)
+    CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(dtype=torch.float16)
     # image_encoder = CLIPImageModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
         
     ### CREATE MMMM MODEL ###
@@ -73,16 +73,17 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
         image_encoder = None,
         dual_encoder = None,
         fusion_encoder = None,
-        device=device,
-        dtype=torch.float16
+        device = device,
+        device_ids = device_ids,
+        dtype = torch.float16
         )
 
     ### LOAD EEG-TEXT-BART ###
     BART_tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
-    BART_pretrained = BartForConditionalGeneration.from_pretrained('facebook/bart-large').to(device, dtype=torch.float16)
+    BART_pretrained = BartForConditionalGeneration.from_pretrained('facebook/bart-large').to(dtype=torch.float16)
     
-    if not device_ids == None:
-        BART_pretrained = nn.DataParallel(BART_pretrained, device_ids=device_ids)
+#     if not device_ids == None:
+#         BART_pretrained = nn.DistributedDataParallel(BART_pretrained, device_ids=device_ids)
 
     # Create Branch for EEG-TEXT-BART
     BART_branch = Branch(
@@ -96,6 +97,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
         device=device,
         dtype=torch.float16
         )
+        
 
     # Adding Branch
     model.add_branch(
@@ -128,7 +130,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
     scheduler.set_timesteps(50)
     
     # Initializing the U-Net model
-    unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet", torch_dtype=torch.float16).to(device)
+    unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet", torch_dtype=torch.float16)
 
     # Initializing CLIP Pretrains
     CLIPtokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
@@ -258,9 +260,8 @@ def INITIALIZE_DATALOADERS(keys, bsz):
             ZuCo_data = load_txt_data("./data/ZuCo", "BART")
             master_eeg, master_embeds = ZuCo_data["data"], ZuCo_data["targets"]
             del ZuCo_data
-            bsz=bsz[idx]
             ZuCo_dataloader = {
-                "train" : ZuCoDataloader(master_eeg["train"], master_embeds["train"], bsz=bsz, drop_last=True),
+                "train" : ZuCoDataloader(master_eeg["train"], master_embeds["train"], bsz=bsz[idx], drop_last=True),
                 "dev" : ZuCoDataloader(master_eeg["dev"], master_embeds["dev"], bsz=1, drop_last=True),
                 "test" : ZuCoDataloader(master_eeg["test"], master_embeds["test"], bsz=1, drop_last=True)
             }
@@ -271,11 +272,10 @@ def INITIALIZE_DATALOADERS(keys, bsz):
             Brain2Image_data = load_img_data("./data/Brain2Image")
             labels, img_net_dict, label_dict = Brain2Image_data["data"], Brain2Image_data["targets"], Brain2Image_data["labels"]
             del Brain2Image_data
-            bsz=bsz[idx]
-            if not bsz == 1:
+            if not bsz[idx] == 1:
                 print("[WARNING] Batch Size for Brain2Image AKA ImageNet is NOT 1. UNEXPECTED BEHAVIOR MAY OCCUR.")
             Brain2Image_dataloader = {
-                "train": ImageNetDataloader(labels["train"], img_net_dict, label_dict, bsz=bsz, drop_last=True),
+                "train": ImageNetDataloader(labels["train"], img_net_dict, label_dict, bsz=bsz[idx], drop_last=True),
                 "dev": ImageNetDataloader(labels["dev"], img_net_dict, label_dict, bsz=1, drop_last=True),
                 "test": ImageNetDataloader(labels["test"], img_net_dict, label_dict, bsz=1, drop_last=True)
             }

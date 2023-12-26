@@ -47,7 +47,7 @@ class MMMM(nn.Module):
             output_dim=768,
             num_layers=4,
         ),
-        device="cuda",
+        device=None,
         device_ids=None,
         dtype=torch.float16
     ):
@@ -64,8 +64,9 @@ class MMMM(nn.Module):
         self.heads = nn.ModuleDict()
         self.device = device
         self.device_ids = device_ids
-
-        self.to(device)
+        
+        if not device == None:
+            self.to(device)
 
     def add_branch(self, name, branch):
         """
@@ -76,7 +77,7 @@ class MMMM(nn.Module):
             branch (nn.Module): The branch module to be added.
 
         """
-        self.branches[name] = branch.to(self.device, dtype=self.dtype)
+        self.branches[name] = branch.to(dtype=self.dtype)
     
     def add_head(self, name, head):
         """
@@ -87,9 +88,9 @@ class MMMM(nn.Module):
             head (nn.Module): The head module to be added.
 
         """
-        self.heads[name] = head.to(self.device, dtype=self.dtype)
+        self.heads[name] = head.to(dtype=self.dtype)
 
-    def forward(self, mode, args_dict, meta=False, staging_device="cuda:0"):
+    def forward(self, mode, args_dict, meta=False, staging_device="cuda:0", debug=False):
         """
         Performs forward pass through the model.
 
@@ -104,32 +105,50 @@ class MMMM(nn.Module):
 
         """
         if mode == "EEG-TEXT-BART":
-            encoded_embedding = self.eeg_encoder(mode, args_dict)
+            encoded_embedding = self.eeg_encoder(mode, args_dict, staging_device, debug)
+            if debug:
+                print("ENCODER GOOD")
             if meta:
                 encoded_embedding = self.meta_head(encoded_embedding)
             else:
                 encoded_embedding = self.heads[mode](encoded_embedding)
+            if debug:
+                print("HEAD GOOD")
             args_dict["input_data_batch"] = encoded_embedding
-            out = self.branches[mode](mode,args_dict,staging_device)
+            out = self.branches[mode](mode, args_dict, staging_device, debug)
+            if debug:
+                print("BRANCH GOOD")
             return out
         elif mode == "EEG-IMG-DIFFUSION":
             if "train" in args_dict and args_dict["train"]:
                 encoded_embedding = self.eeg_encoder("EEG-IMG-BRAIN2IMAGE", args_dict)
+                if debug:
+                    print("ENCODER GOOD")
                 if meta:
                     encoded_embedding = self.meta_head(encoded_embedding)
                 else:
                     encoded_embedding = self.heads[mode](encoded_embedding)
+                if debug:
+                    print("HEAD GOOD")
                 args_dict["input_data_batch"] = encoded_embedding
-                out = self.branches[mode](mode, args_dict, staging_device)
+                out = self.branches[mode](mode, args_dict, staging_device, debug)
+                if debug:
+                    print("BRANCH GOOD")
                 return out
             else:   
                 encoded_embedding = self.eeg_encoder("EEG-IMG-BRAIN2IMAGE", args_dict)
+                if debug:
+                    print("ENCODER GOOD")
                 if meta:
                     encoded_embedding = self.meta_head(encoded_embedding)
                 else:
                     encoded_embedding = self.heads[mode](encoded_embedding)
+                if debug:
+                    print("HEAD GOOD")
                 args_dict["input_data_batch"] = encoded_embedding
                 out = self.branches[mode](mode, args_dict, staging_device)
+                if debug:
+                    print("BRANCH GOOD")
                 return out
         elif mode == "EEG-IMG-BRAIN2IMAGE-CLASSIFICATION":
             encoded_embedding = self.eeg_encoder("EEG-IMG-BRAIN2IMAGE", args_dict)

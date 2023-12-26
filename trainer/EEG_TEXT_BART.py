@@ -28,10 +28,10 @@ def train(args_dict):
         while not current_data["reset"]:
             input_embeddings, seq_len, input_masks, input_mask_invert, target_ids, target_mask, sentiment_labels, sent_level_EEG = current_data["data"]
                 
-            input_embeddings_batch = input_embeddings.to(staging_device).float()
-            input_masks_batch = input_masks.to(staging_device)
-            input_mask_invert_batch = input_mask_invert.to(staging_device)
-            target_ids_batch = target_ids.to(staging_device)
+            input_embeddings_batch = input_embeddings
+            input_masks_batch = input_masks
+            input_mask_invert_batch = input_mask_invert
+            target_ids_batch = target_ids
             
             """replace padding ids in target_ids with -100"""
             target_ids_batch[target_ids_batch == tokenizer.pad_token_id] = -100 
@@ -39,16 +39,18 @@ def train(args_dict):
             optimizer.zero_grad()
 
             args_dict = {
-                "input_data_batch" : input_embeddings_batch,
-                "input_masks_batch" : input_masks_batch,
-                "input_masks_invert" : input_mask_invert_batch,
-                "target_ids_batch" : target_ids_batch
+                "input_data_batch" : input_embeddings_batch.to(staging_device, dtype=torch.float16),
+                "input_masks_batch" : input_masks_batch.to(staging_device, dtype=torch.float16),
+                "input_masks_invert" : input_mask_invert_batch.to(staging_device, dtype=torch.float16),
+                "target_ids_batch" : target_ids_batch.to(staging_device),
+                "pool_result" : False
                 }
             
             seq2seqLMoutput = model(
                 mode="EEG-TEXT-BART",
                 args_dict=args_dict,
-                staging_device=staging_device
+                staging_device=staging_device,
+                debug=True
                 )
             
             # Use the BART language modeling loss
@@ -57,11 +59,11 @@ def train(args_dict):
             # Backward + Optimize only if in training phase
             if phase == 'train':
                 if device_ids == None:
-                        loss.backward()
-                        optimizer.step()
+                    loss.backward()
+                    optimizer.step()
                 else:
-                        loss.mean().backward()
-                        optimizer.step()
+                    loss.mean().backward()
+                    optimizer.step()
 
             # Compute stats
             if device_ids == None:

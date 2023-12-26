@@ -22,7 +22,7 @@ class EEGEncoder(nn.Module):
         device_ids (list): List of device IDs for multi-GPU training (default: None).
     """
 
-    def __init__(self, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8, device="cuda", device_ids=None, dtype=torch.float16):
+    def __init__(self, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8, device=None, device_ids=None, dtype=torch.float16):
         super(EEGEncoder, self).__init__()
         self.device = device
         self.heads = nn.ModuleDict()
@@ -31,7 +31,9 @@ class EEGEncoder(nn.Module):
         self.fc_proj = nn.Linear(enc_feat, dec_emb_sz)
         self.device_ids = device_ids
         self.dtype = dtype
-        self.to(device)
+        self.device = device
+        if not device == None:
+            self.to(device)
         
     def add_head(self, name, head):
         """
@@ -41,9 +43,9 @@ class EEGEncoder(nn.Module):
             name (str): The name of the head.
             head (nn.Module): The head module to add.
         """
-        self.heads[name] = head.to(device=self.device, dtype=self.dtype)
+        self.heads[name] = head.to(dtype=self.dtype)
 
-    def forward(self, mode, args_dict, staging_device="cuda:0"):
+    def forward(self, mode, args_dict, staging_device="cuda:0", debug=False):
         """
         Forward pass of the encoder.
 
@@ -59,8 +61,14 @@ class EEGEncoder(nn.Module):
             input_data_batch = args_dict["input_data_batch"]
             input_masks_invert = args_dict["input_masks_invert"]
             encoded_embedding = self.heads[mode](input_data_batch)
+            if debug:
+                print("ENCODER HEAD GOOD")
             encoded_embedding = self.encoder(encoded_embedding, src_key_padding_mask=input_masks_invert)
+            if debug:
+                print("ENCODER ENCODER GOOD")
             encoded_embedding = F.relu(self.fc_proj(encoded_embedding))
+            if debug:
+                print("ENCODER FC GOOD")
             pool_result = args_dict["pool_result"]
             if pool_result:
                 encoded_embedding = torch.mean(encoded_embedding, dim=1)
