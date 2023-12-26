@@ -43,13 +43,20 @@ class ImageNetDataloader():
         self.ptr = 0
         self.is_reset = True
 
+    def set_bsz(self, new_bsz):
+        self.bsz = new_bsz
+
 class ZuCoDataloader():
     def __init__(self, data, targets, bsz=64, drop_last=True):
         super(ZuCoDataloader, self).__init__()
+        self._data = data
+        self._targets = targets
+        self._drop_last = drop_last
         self.eeg_dataloader = DataLoader(data, batch_size=bsz, shuffle=False, drop_last=drop_last)
         self.embeds_dataloader = DataLoader(targets, batch_size=bsz, shuffle=False, drop_last=drop_last)
         self.eeg_iter = iter(self.eeg_dataloader)
         self.embeds_iter = iter(self.embeds_dataloader)
+        self.bsz = bsz
 
     def load_data(self, just_reset=False):
         try:
@@ -64,3 +71,8 @@ class ZuCoDataloader():
     def reset(self):
         self.eeg_iter = iter(self.eeg_dataloader)
         self.embeds_iter = iter(self.embeds_dataloader)
+
+    def set_bsz(self, new_bsz):
+        self.bsz = new_bsz
+        self.eeg_dataloader = DataLoader(self._data, batch_size=new_bsz, shuffle=False, drop_last=self._drop_last)
+        self.embeds_dataloader = DataLoader(self._targets, batch_size=new_bsz, shuffle=False, drop_last=self._drop_last)

@@ -242,7 +242,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
     
     return model
 
-def INITIALIZE_DATALOADERS(keys, bsz):
+def INITIALIZE_DATALOADERS(keys, bsz, dev_bsz=None):
     """
     Initialize and return a dictionary of dataloaders based on the given keys and batch sizes.
 
@@ -262,8 +262,20 @@ def INITIALIZE_DATALOADERS(keys, bsz):
             del ZuCo_data
             ZuCo_dataloader = {
                 "train" : ZuCoDataloader(master_eeg["train"], master_embeds["train"], bsz=bsz[idx], drop_last=True),
-                "dev" : ZuCoDataloader(master_eeg["dev"], master_embeds["dev"], bsz=1, drop_last=True),
-                "test" : ZuCoDataloader(master_eeg["test"], master_embeds["test"], bsz=1, drop_last=True)
+                "dev" : ZuCoDataloader(master_eeg["dev"], master_embeds["dev"], bsz=1 if dev_bsz[idx] is None else dev_bsz[idx], drop_last=True),
+                "test" : ZuCoDataloader(master_eeg["test"], master_embeds["test"], bsz=1 if dev_bsz[idx] is None else dev_bsz[idx], drop_last=True)
+            }
+            del master_eeg, master_embeds
+            dataloader_dict[key] = ZuCo_dataloader
+            del ZuCo_dataloader
+        elif key == "ZuCo-CLIP":
+            ZuCo_data = load_txt_data("./data/ZuCo", "CLIP")
+            master_eeg, master_embeds = ZuCo_data["data"], ZuCo_data["targets"]
+            del ZuCo_data
+            ZuCo_dataloader = {
+                "train" : ZuCoDataloader(master_eeg["train"], master_embeds["train"], bsz=bsz[idx], drop_last=True),
+                "dev" : ZuCoDataloader(master_eeg["dev"], master_embeds["dev"], bsz=1 if dev_bsz[idx] is None else dev_bsz[idx], drop_last=True),
+                "test" : ZuCoDataloader(master_eeg["test"], master_embeds["test"], bsz=1 if dev_bsz[idx] is None else dev_bsz[idx], drop_last=True)
             }
             del master_eeg, master_embeds
             dataloader_dict[key] = ZuCo_dataloader
@@ -276,8 +288,8 @@ def INITIALIZE_DATALOADERS(keys, bsz):
                 print("[WARNING] Batch Size for Brain2Image AKA ImageNet is NOT 1. UNEXPECTED BEHAVIOR MAY OCCUR.")
             Brain2Image_dataloader = {
                 "train": ImageNetDataloader(labels["train"], img_net_dict, label_dict, bsz=bsz[idx], drop_last=True),
-                "dev": ImageNetDataloader(labels["dev"], img_net_dict, label_dict, bsz=1, drop_last=True),
-                "test": ImageNetDataloader(labels["test"], img_net_dict, label_dict, bsz=1, drop_last=True)
+                "dev": ImageNetDataloader(labels["dev"], img_net_dict, label_dict, bsz=1 if dev_bsz[idx] is None else dev_bsz[idx], drop_last=True),
+                "test": ImageNetDataloader(labels["test"], img_net_dict, label_dict, bsz=1 if dev_bsz[idx] is None else dev_bsz[idx], drop_last=True)
             }
             del labels, img_net_dict
             dataloader_dict[key] = Brain2Image_dataloader
