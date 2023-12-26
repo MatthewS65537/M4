@@ -48,7 +48,7 @@ if __name__ == "__main__":
     
     print(f"[INFO] INITIALIZING MODEL.")
     model = INITIALIZE_MODEL(device=device, device_ids=device_ids)
-    model = nn.DataParallel(model, device_ids=device_ids)
+    model = nn.DataParallel(model).to(device)
     dataset_dict = INITIALIZE_DATALOADERS(
         keys=["ZuCo-BART", "Brain2Image"],
         bsz=[512, 1]
