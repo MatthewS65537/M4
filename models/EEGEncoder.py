@@ -22,7 +22,7 @@ class EEGEncoder(nn.Module):
         device_ids (list): List of device IDs for multi-GPU training (default: None).
     """
 
-    def __init__(self, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8, device=None, device_ids=None, dtype=torch.float16):
+    def __init__(self, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8, device=None, device_ids=None, dtype=torch.float32):
         super(EEGEncoder, self).__init__()
         self.device = device
         self.heads = nn.ModuleDict()
@@ -34,6 +34,7 @@ class EEGEncoder(nn.Module):
         self.device = device
         if not device == None:
             self.to(device)
+        self.to(dtype=dtype)
         
     def add_head(self, name, head):
         """

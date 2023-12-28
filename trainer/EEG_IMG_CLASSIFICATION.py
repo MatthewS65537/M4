@@ -1,11 +1,11 @@
-# EEG-IMG-CLASSIFICATION
+# Debugged
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 import numpy as np
 
-def train(args_dict):
+def train(args_dict, using_non_pytorch_parallel=False):
     dataloader = args_dict["dataloader"]
     model = args_dict["model"]
     optimizer = args_dict["optimizer"]
@@ -31,7 +31,7 @@ def train(args_dict):
         while not current_data["reset"]:
             eegs = current_data["data"]
             expected = current_data["classes"]
-            target = torch.zeros(eegs.shape[0], 40).to(device, dtype=float)
+            target = torch.zeros(eegs.shape[0], 40).to(device, dtype=torch.float32)
             for i in range(len(expected)):
                 target[i][expected[i]] = 1.0
 
@@ -48,7 +48,7 @@ def train(args_dict):
                 staging_device=staging_device
                 )
             
-            loss = criterion(output.to(dtype=float), target.to(dtype=float))
+            loss = criterion(output.to(dtype=torch.float32), target.to(dtype=torch.float32))
 
             # Backward + Optimize only if in training phase
             if phase == 'train':

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 import numpy as np
 
-def train(args_dict):
+def train(args_dict, using_non_pytorch_parallel=False):
     dataloader = args_dict["dataloader"]
     model = args_dict["model"]
     optimizer = args_dict["optimizer"]
@@ -13,9 +13,11 @@ def train(args_dict):
     device = args_dict["device"] if "device" in args_dict else "cuda"
     device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
     staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
-    symmetric_KL = lambda a, b : 0.5 * (criterion(F.log_softmax(a, dim=1), F.softmax(b, dim=1)) + criterion(F.log_softmax(b, dim=1), F.softmax(a, dim=1)))
+    temperature = args_dict["temperature"] if "temperature" in args_dict else 50
+    symmetric_KL = lambda a, b, t=temperature: 0.5 * (criterion(F.log_softmax(a/t, dim=1), F.softmax(b/t, dim=1)) + criterion(F.log_softmax(b/t, dim=1), F.softmax(a/t, dim=1)))
     dev_bsz = args_dict["dev_bsz"] if "dev_bsz" in args_dict else 64
-
+    bool_eval = args_dict["bool_eval"] if "bool_eval" in args_dict else False
+    
     if staging_device==None:
         staging_device = f"cuda:{device_ids[0]}" if device_ids == None else "cuda"
     results = {}
@@ -28,6 +30,9 @@ def train(args_dict):
 
         running_loss = 0.0
         tot_cnt = 0
+        
+        correct = 0
+        tot = 0
 
         # Iterate over data.
         current_data = dataloader[phase].load_data()
@@ -84,9 +89,18 @@ def train(args_dict):
             tot_cnt += input_embeddings_batch.size()[0]
             current_data = dataloader[phase].load_data()
 
-        epoch_loss = running_loss / tot_cnt
+            for i in range(output.shape[0]):
+                current = torch.argmax(output[i])
+                if current == i:
+                    correct += 1
+                tot += 1
 
+        epoch_loss = running_loss / tot_cnt
+        
         results[f"{phase}_loss"] = epoch_loss
+        
+        if bool_eval:
+            results[f"{phase}_accuracy"] = correct / tot
     results["model"] = model
     return results
 
@@ -110,7 +124,7 @@ def evaluate(args_dict):
             model.eval()     # Set model to evaluate mode
 
         correct = 0
-        tot_cnt = 0
+        tot = 0
 
         # Iterate over data.
         current_data = dataloader[phase].load_data()
@@ -128,10 +142,10 @@ def evaluate(args_dict):
             model.zero_grad()
 
             args_dict = {
-                "input_data_batch" : input_embeddings_batch.to(staging_device, dtype=torch.float32),
-                "input_masks_batch" : input_masks_batch.to(staging_device, dtype=torch.float32),
-                "input_masks_invert" : input_mask_invert_batch.to(staging_device, dtype=torch.float32),
-                "target_ids_batch" : target_ids_batch.to(staging_device),
+                "input_data_batch" : input_embeddings_batch.to(dtype=torch.float32),
+                "input_masks_batch" : input_masks_batch.to(dtype=torch.float32),
+                "input_masks_invert" : input_mask_invert_batch.to(dtype=torch.float32),
+                "target_ids_batch" : target_ids_batch,
                 "pool_result" : False
                 }
 
@@ -152,9 +166,9 @@ def evaluate(args_dict):
                 current = torch.argmax(output[i])
                 if current == i:
                     correct += 1
-                tot_cnt += 1
+                tot += 1
 
             current_data = dataloader[phase].load_data()
-            results[f"{phase}_accuracy"] = correct / tot_cnt
+            results[f"{phase}_accuracy"] = correct / tot
     model.zero_grad()
     return results

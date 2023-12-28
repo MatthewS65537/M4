@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DiffusionHead(nn.Module):
-    def __init__(self, scheduler, unet, tokenizer, text_encoder, device=None, dtype=torch.float16):
+    def __init__(self, scheduler, unet, tokenizer, text_encoder, device=None, dtype=torch.float32):
         super(DiffusionHead, self).__init__()
         self.DiffusionHead = scheduler
         self.unet = unet
@@ -21,7 +21,7 @@ class DiffusionHead(nn.Module):
         '''
         if maxlen is None: maxlen = self.CLIPtokenizer.model_max_length
         inp = self.CLIPtokenizer(prompts, padding="max_length", max_length=maxlen, truncation=True, return_tensors="pt")
-        return self.CLIPtext_encoder(inp.input_ids)[0].to(torch.float16)
+        return self.CLIPtext_encoder(inp.input_ids)[0].to(self.dtype)
 
     def forward(self, args_dict):
         '''
@@ -30,11 +30,11 @@ class DiffusionHead(nn.Module):
         Maybe consider adding a dimension argument as well?
         '''
         if "train" in args_dict and args_dict["train"]:
-            emb=args_dict["input_data_batch"].to(torch.float16)
+            emb=args_dict["input_data_batch"].to(self.dtype)
             emb=emb.reshape(1, 1, 768)
             g=7.5
             timesteps=args_dict["timesteps"]
-            noisy_latents=args_dict["noisy_latents"].to(torch.float16)
+            noisy_latents=args_dict["noisy_latents"].to(self.dtype)
             res=self.unet(noisy_latents, timesteps, emb).sample
             return res
         else:

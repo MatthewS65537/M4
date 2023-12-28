@@ -13,7 +13,7 @@ from load_data import *
 from dataloader import *
 import torch
 
-def INITIALIZE_MODEL(device="cuda", device_ids=None):
+def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
     """
     Initializes the model with the specified device and device IDs.
 
@@ -37,7 +37,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
         enc_dim_ff=2048,
         num_enc_layers=8,
         device=device,
-        dtype=torch.float16
+        dtype=dtype
         )
 
     eeg_enc.add_head(
@@ -47,7 +47,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             output_dim=1024,
             hidden_dim=1024,
             num_layers=1,
-            device=device
+            device=device,
+            dtype=dtype
             )
         )
 
@@ -58,11 +59,12 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             output_dim=1024,
             hidden_dim=1024,
             num_layers=1,
-            device=device
+            device=device,
+            dtype=dtype
             )
         )
 
-    CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(dtype=torch.float16)
+    CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(dtype=dtype)
     # image_encoder = CLIPImageModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
         
     ### CREATE MMMM MODEL ###
@@ -75,12 +77,12 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
         fusion_encoder = None,
         device = device,
         device_ids = device_ids,
-        dtype = torch.float16
+        dtype = dtype
         )
 
     ### LOAD EEG-TEXT-BART ###
     BART_tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
-    BART_pretrained = BartForConditionalGeneration.from_pretrained('facebook/bart-large').to(dtype=torch.float16)
+    BART_pretrained = BartForConditionalGeneration.from_pretrained('facebook/bart-large').to(dtype=dtype)
     
 #     if not device_ids == None:
 #         BART_pretrained = nn.DistributedDataParallel(BART_pretrained, device_ids=device_ids)
@@ -95,7 +97,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             ),
         body=BART_pretrained,
         device=device,
-        dtype=torch.float16
+        dtype=dtype
         )
         
 
@@ -112,7 +114,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             input_dim=768,
             output_dim=768,
             num_layers=4,
-            device=device
+            device=device,
+            dtype=dtype
         )
     )
     
@@ -130,7 +133,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
     scheduler.set_timesteps(50)
     
     # Initializing the U-Net model
-    unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet", torch_dtype=torch.float16)
+    unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet", torch_dtype=dtype)
+    unet.requires_grad_(False)
 
     # Initializing CLIP Pretrains
     CLIPtokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
@@ -153,7 +157,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             device=device
             ),
         device=device,
-        dtype=torch.float16
+        dtype=dtype
         )
 
     # Adding Branch
@@ -169,7 +173,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             input_dim=768,
             output_dim=768,
             num_layers=4,
-            device=device
+            device=device,
+            dtype=dtype
             )
     )
 
@@ -179,17 +184,19 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             input_dim=768,
             output_dim=512,
             num_layers=1,
-            device=device
+            device=device,
+            dtype=dtype
             ),
         body=ClassificationHead(
             input_dim=512,
             output_dim=40,
             hidden_dim=1024,
             num_layers=4,
-            device=device
+            device=device,
+            dtype=dtype
             ),
         device=device,
-        dtype=torch.float16
+        dtype=dtype
     )
 
     # Adding Branch
@@ -205,7 +212,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             input_dim=768,
             output_dim=768,
             num_layers=4,
-            device=device
+            device=device,
+            dtype=dtype
             )
         )
     
@@ -214,17 +222,19 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             input_dim=768,
             output_dim=512,
             num_layers=1,
-            device=device
+            device=device,
+            dtype=dtype
             ),
         body=ClassificationHead(
             input_dim=512,
             output_dim=3,
             hidden_dim=1024,
             num_layers=4,
-            device=device
+            device=device,
+            dtype=dtype
             ),
         device=device,
-        dtype=torch.float16
+        dtype=dtype
     )
     model.add_branch(
         name="EEG-TEXT-BART-SENTIMENT",
@@ -236,7 +246,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None):
             input_dim=768,
             output_dim=768,
             num_layers=4,
-            device=device
+            device=device,
+            dtype=dtype
         )
     )
     

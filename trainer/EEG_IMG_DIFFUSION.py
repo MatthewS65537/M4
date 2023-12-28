@@ -1,4 +1,4 @@
-# EEG-IMG-DIFFUSION
+# Debugged, SLOW
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -28,7 +28,7 @@ def latents_to_pil(vae, latents):
   pil_images = [Image.fromarray(image) for image in images]
   return pil_images
 
-def train(args_dict):
+def train(args_dict, using_non_pytorch_parallel=False):
     dataloader = args_dict["dataloader"]
     model = args_dict["model"]
     optimizer = args_dict["optimizer"]
@@ -37,6 +37,7 @@ def train(args_dict):
     vae = args_dict["vae"]
     device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
     staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
+    latent_dict = args_dict["latent_dict"]
     del args_dict
 
     if staging_device==None:
@@ -56,6 +57,9 @@ def train(args_dict):
         while not current_data["reset"]:
             eeg, labels = current_data["data"], current_data["labels"]
             latents = [pil_to_latent(vae, Image.open(f"./data/Brain2Image/imageNet_images/{label.split('_')[0]}/{label}.JPEG").convert("RGB")) for label in labels]
+            for i in range(len(latents)):
+                latent_dict[labels[i]] = latents[i]
+                
             if not len(latents) == 1:
                 print("[WARNING] BSZ NOT 1. AUTOMATICALLY DROPPING ALL BUT FIRST IN BATCH.")
             latents = latents[0]
@@ -71,13 +75,14 @@ def train(args_dict):
             optimizer.zero_grad()
 
             args_dict = {
-                "input_data_batch" : eeg.to(device, dtype=torch.float16),
+                "input_data_batch" : eeg.to(device, dtype=torch.float32),
                 "pool_result" : True,
-                "noisy_latents" : noisy_latents.to(device, dtype=torch.float16),
+                "noisy_latents" : noisy_latents.to(device, dtype=torch.float32),
                 "timesteps" : timesteps,
                 "train" : True
             }
             model_pred = model("EEG-IMG-DIFFUSION", args_dict)
+            
             loss = criterion(model_pred, noise)
             loss.backward()
             optimizer.step()
@@ -94,9 +99,8 @@ def train(args_dict):
 
         results[f"{phase}_loss"] = epoch_loss
     results["model"] = model
+    results["latent_dict"] = latent_dict
     return results
-
-torch.set_default_dtype(torch.float16)
 
 from master_init import *
 from DSG import *
@@ -110,7 +114,7 @@ if __name__ == "__main__":
     device_ids = config["device_ids"]
 
     # model = INITIALIZE_MODEL(device=device, device_ids=device_ids).to(device)
-    model = INITIALIZE_MODEL(device=device, device_ids=device_ids).to(device, dtype=torch.float16)
+    model = INITIALIZE_MODEL(device=device, device_ids=device_ids).to(device, dtype=torch.float32)
 
     dataset_dict = INITIALIZE_DATALOADERS(
         keys=["Brain2Image"],

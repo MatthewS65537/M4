@@ -1,10 +1,11 @@
+# Debugged
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 import numpy as np
 
-def train(args_dict):
+def train(args_dict, using_non_pytorch_parallel=False):
     dataloader = args_dict["dataloader"]
     model = args_dict["model"]
     optimizer = args_dict["optimizer"]
@@ -50,9 +51,9 @@ def train(args_dict):
             for i in range(input_embeddings.shape[0]):
                 target[i][sentiment_labels[i]] = 1.0
 
-            input_embeddings_batch = input_embeddings.to(staging_device, dtype=torch.float16)
-            input_masks_batch = input_masks.to(staging_device, dtype=torch.float16)
-            input_mask_invert_batch = input_mask_invert.to(staging_device, dtype=torch.float16)
+            input_embeddings_batch = input_embeddings.to(staging_device, dtype=torch.float32)
+            input_masks_batch = input_masks.to(staging_device, dtype=torch.float32)
+            input_mask_invert_batch = input_mask_invert.to(staging_device, dtype=torch.float32)
             target_ids_batch = target_ids.to(staging_device)
 
             """replace padding ids in target_ids with -100"""
@@ -74,7 +75,7 @@ def train(args_dict):
                 staging_device=staging_device
                 )
 
-            loss = criterion(output.to(dtype=float), target.to(dtype=float))
+            loss = criterion(output.to(dtype=torch.float32), target.to(dtype=torch.float32))
 
             # Backward + Optimize only if in training phase
             if phase == 'train':
