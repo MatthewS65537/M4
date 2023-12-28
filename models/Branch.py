@@ -9,7 +9,7 @@ from FCN import *
 from EEGEncoder import *
 
 class Branch(nn.Module):
-    def __init__(self, head, body, device="cuda", device_ids=None, dtype=torch.float16):
+    def __init__(self, head, body, device="cuda", device_ids=None, dtype=torch.float32):
         """
         Initializes a Branch module.
 

@@ -49,7 +49,7 @@ class MMMM(nn.Module):
         ),
         device=None,
         device_ids=None,
-        dtype=torch.float16
+        dtype=torch.float32
     ):
         super(MMMM, self).__init__()
         self.dtype = dtype

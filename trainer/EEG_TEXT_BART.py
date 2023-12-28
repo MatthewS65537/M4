@@ -1,8 +1,9 @@
+# FINISHED DEBUG
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-def train(args_dict):
+def train(args_dict, using_non_pytorch_parallel=False):
     dataloader = args_dict["dataloader"]
     model = args_dict["model"]
     optimizer = args_dict["optimizer"]
@@ -39,9 +40,9 @@ def train(args_dict):
             optimizer.zero_grad()
 
             args_dict = {
-                "input_data_batch" : input_embeddings_batch.to(staging_device, dtype=torch.float16),
-                "input_masks_batch" : input_masks_batch.to(staging_device, dtype=torch.float16),
-                "input_masks_invert" : input_mask_invert_batch.to(staging_device, dtype=torch.float16),
+                "input_data_batch" : input_embeddings_batch.to(staging_device, dtype=torch.float32),
+                "input_masks_batch" : input_masks_batch.to(staging_device, dtype=torch.float32),
+                "input_masks_invert" : input_mask_invert_batch.to(staging_device, dtype=torch.float32),
                 "target_ids_batch" : target_ids_batch.to(staging_device),
                 "pool_result" : False
                 }
@@ -50,15 +51,29 @@ def train(args_dict):
                 mode="EEG-TEXT-BART",
                 args_dict=args_dict,
                 staging_device=staging_device,
-                debug=True
+#                 debug=True
                 )
             
+#             print(seq2seqLMoutput)
+            
             # Use the BART language modeling loss
-            loss = seq2seqLMoutput.loss
+            if using_non_pytorch_parallel:
+                loss = None
+                for LMoutput in seq2seqLMoutput:
+                    if loss == None:
+                        loss = LMoutput.loss.to(staging_device)
+                    else:
+                        loss += LMoutput.loss.to(staging_device)
+                loss /= len(seq2seqLMoutput)
+            else:
+                loss = seq2seqLMoutput.loss
             
             # Backward + Optimize only if in training phase
             if phase == 'train':
                 if device_ids == None:
+                    loss.backward()
+                    optimizer.step()
+                elif using_non_pytorch_parallel:
                     loss.backward()
                     optimizer.step()
                 else:

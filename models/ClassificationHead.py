@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class ClassificationHead(nn.Module):
-    def __init__(self, input_dim=512, output_dim=10, hidden_dim=1024, num_layers=2, device="cuda"):
+    def __init__(self, input_dim=512, output_dim=10, hidden_dim=1024, num_layers=2, device=None, dtype=torch.float32):
         """
         Classification Neural Network model.
 
@@ -23,7 +23,10 @@ class ClassificationHead(nn.Module):
         self.activation = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)  # Add softmax activation
         self.device = device
-        self.to(device)
+        self.dtype = dtype
+        if not device == None:
+            self.to(device)
+        self.to(dtype)
 
     def forward(self, x, staging_device="cuda:0"):
         """

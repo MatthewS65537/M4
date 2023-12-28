@@ -3,12 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DualEncoder(nn.Module):
-    def __init__(self, out_dim, device="cuda", device_ids=None):
+    def __init__(self, out_dim, device=None, device_ids=None, dtype=torch.float32):
         super(DualEncoder, self).__init__()
         self.device = device
         self.fc = nn.ModuleDict()
         self.out_dim = out_dim
         self.to(device)
+        self.to(dtype=dtype)
     
     def add_mode(self, name, in_dim):
         self.fc[name] = nn.Linear(in_dim, self.out_dim)
