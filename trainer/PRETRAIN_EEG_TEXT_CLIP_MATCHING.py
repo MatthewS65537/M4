@@ -13,7 +13,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
     device = args_dict["device"] if "device" in args_dict else "cuda"
     device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
     staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
-    temperature = args_dict["temperature"] if "temperature" in args_dict else 50
+    temperature = args_dict["temperature"] if "temperature" in args_dict else 20
     symmetric_KL = lambda a, b, t=temperature: 0.5 * (criterion(F.log_softmax(a/t, dim=1), F.softmax(b/t, dim=1)) + criterion(F.log_softmax(b/t, dim=1), F.softmax(a/t, dim=1)))
     dev_bsz = args_dict["dev_bsz"] if "dev_bsz" in args_dict else 64
     bool_eval = args_dict["bool_eval"] if "bool_eval" in args_dict else False

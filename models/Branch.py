@@ -66,13 +66,15 @@ class Branch(nn.Module):
             return out
         elif mode == "EEG-IMG-BRAIN2IMAGE-CLASSIFICATION":
             input_data_batch = args_dict["input_data_batch"]
+            temperature = args_dict["temperature"]
             # Body is ClassificationHead()
             encoded_embedding = self.head(input_data_batch)
-            out = self.body(encoded_embedding)
+            out = self.body(encoded_embedding, temperature)
             return out # Return predicted probabilities for each class
         elif mode == "EEG-TEXT-BART-SENTIMENT": # Same as EEG-IMG-CLASSIFICATION
             input_data_batch = args_dict["input_data_batch"]
+            temperature = args_dict["temperature"]
             # Body is ClassificationHead()
             encoded_embedding = self.head(input_data_batch)
-            out = self.body(encoded_embedding)
+            out = self.body(encoded_embedding, temperature)
             return out # Return predicted probabilities for each class

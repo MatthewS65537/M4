@@ -134,7 +134,12 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
     
     # Initializing the U-Net model
     unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet", torch_dtype=dtype)
-    unet.requires_grad_(False)
+    for name, param in unet.named_parameters():
+        if param.requires_grad:
+            if ('down_blocks' in name) or ('conv_in' in name) or ('time_embedding' in name):
+                continue
+            else:
+                param.requires_grad = False
 
     # Initializing CLIP Pretrains
     CLIPtokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
@@ -293,14 +298,14 @@ def INITIALIZE_DATALOADERS(keys, bsz, dev_bsz=None):
             del ZuCo_dataloader
         elif key == "Brain2Image":
             Brain2Image_data = load_img_data("./data/Brain2Image")
-            labels, img_net_dict, label_dict = Brain2Image_data["data"], Brain2Image_data["targets"], Brain2Image_data["labels"]
+            labels, img_net_dict, label_dict, latent_dict = Brain2Image_data["data"], Brain2Image_data["targets"], Brain2Image_data["labels"], Brain2Image_data["latents"]
             del Brain2Image_data
             if not bsz[idx] == 1:
                 print("[WARNING] Batch Size for Brain2Image AKA ImageNet is NOT 1. UNEXPECTED BEHAVIOR MAY OCCUR.")
             Brain2Image_dataloader = {
-                "train": ImageNetDataloader(labels["train"], img_net_dict, label_dict, bsz=bsz[idx], drop_last=True),
-                "dev": ImageNetDataloader(labels["dev"], img_net_dict, label_dict, bsz=1 if dev_bsz[idx] is None else dev_bsz[idx], drop_last=True),
-                "test": ImageNetDataloader(labels["test"], img_net_dict, label_dict, bsz=1 if dev_bsz[idx] is None else dev_bsz[idx], drop_last=True)
+                "train": ImageNetDataloader(labels["train"], img_net_dict, label_dict, latent_dict, bsz=bsz[idx], drop_last=True),
+                "dev": ImageNetDataloader(labels["dev"], img_net_dict, label_dict, latent_dict, bsz=1 if dev_bsz[idx] is None else dev_bsz[idx], drop_last=True),
+                "test": ImageNetDataloader(labels["test"], img_net_dict, label_dict, latent_dict, bsz=1 if dev_bsz[idx] is None else dev_bsz[idx], drop_last=True)
             }
             del labels, img_net_dict
             dataloader_dict[key] = Brain2Image_dataloader

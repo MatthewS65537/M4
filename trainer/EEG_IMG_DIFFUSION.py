@@ -37,13 +37,14 @@ def train(args_dict, using_non_pytorch_parallel=False):
     vae = args_dict["vae"]
     device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
     staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
-    latent_dict = args_dict["latent_dict"]
+#     latent_dict = args_dict["latent_dict"]
     del args_dict
 
     if staging_device==None:
         staging_device = f"cuda:{device_ids[0]}" if device_ids == None else "cuda"
     results = {}
     for phase in ['train', 'dev']:
+        dataloader[phase].set_bsz(32)
         if phase == 'train':
             model.train()    # Set model to training mode
         else:
@@ -55,29 +56,61 @@ def train(args_dict, using_non_pytorch_parallel=False):
         # Iterate over data.
         current_data = dataloader[phase].load_data()
         while not current_data["reset"]:
-            eeg, labels = current_data["data"], current_data["labels"]
-            latents = [pil_to_latent(vae, Image.open(f"./data/Brain2Image/imageNet_images/{label.split('_')[0]}/{label}.JPEG").convert("RGB")) for label in labels]
-            for i in range(len(latents)):
-                latent_dict[labels[i]] = latents[i]
-                
-            if not len(latents) == 1:
-                print("[WARNING] BSZ NOT 1. AUTOMATICALLY DROPPING ALL BUT FIRST IN BATCH.")
-            latents = latents[0]
+            labels = current_data["labels"]
+            latents = current_data["latents"]
+            latents = torch.cat(latents, dim=0)
+            
+#             latents = []
+#             for i in range(len(latents)):
+#                 if label in latent_dict:
+#                     latents.append(latent_dict[label])
+#                 else:
+#                     latents.append(pil_to_latent(vae, Image.open(f"./data/Brain2Image/imageNet_images/{label.split('_')[0]}/{label}.JPEG").convert("RGB")))
+#                     latent_dict[labels[i]] = latents[i]
 
+            max_len = max(i.shape[0] for i in current_data["data"])
+            eegs = []
+            masks = []
+            invert_masks = []
+            for i in range(len(current_data["data"])):
+                eeg = current_data["data"][i]
+                cur_sz = eeg.shape[0]
+                mask = torch.cat((torch.ones(cur_sz), torch.zeros(max_len - cur_sz)))
+                masks.append(mask)
+                invert_masks.append(1 - mask)
+                eegs.append(torch.cat((eeg, torch.zeros(max_len - cur_sz, eeg.shape[1]))))
+
+            eeg_batch = torch.stack(eegs)
+            masks_batch = torch.stack(masks)
+            invert_masks_batch = torch.stack(invert_masks)
+            
+            timesteps = torch.randint(0, 30, (len(eegs),))
+            timesteps = timesteps.long()
+            
             noise = torch.randn_like(latents)
+            noisy_latents = latents + noise
+            
+#             # FIX THIS!
+#             if not len(latents) == 1:
+#                 print("[WARNING] BSZ NOT 1. AUTOMATICALLY DROPPING ALL BUT FIRST IN BATCH.")
+#             latents = latents[0]
+
+#             noise = torch.randn_like(latents)
             bsz = latents.shape[0]
 
-            timesteps = torch.randint(0, 30, (bsz,), device=latents.device)
-            timesteps = timesteps.long()
+#             timesteps = torch.randint(0, 30, (bsz,))
+#             timesteps = timesteps.long()
 
-            noisy_latents = latents + noise
+#             noisy_latents = latents + noise
 
             optimizer.zero_grad()
 
             args_dict = {
-                "input_data_batch" : eeg.to(device, dtype=torch.float32),
+                "input_data_batch" : eeg_batch,
+                "input_masks_batch" : masks_batch,
+                "input_masks_invert" : invert_masks_batch,
                 "pool_result" : True,
-                "noisy_latents" : noisy_latents.to(device, dtype=torch.float32),
+                "noisy_latents" : noisy_latents.to(dtype=torch.float32),
                 "timesteps" : timesteps,
                 "train" : True
             }
@@ -87,7 +120,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
             loss.backward()
             optimizer.step()
             
-            # # statistics
+            # statistics
             running_loss += loss.item() * bsz
             tot_cnt += bsz
 
@@ -95,11 +128,11 @@ def train(args_dict, using_non_pytorch_parallel=False):
 
         epoch_loss = running_loss / tot_cnt
         results[phase] = epoch_loss
-        print('{} Loss: {:.4f}'.format(phase, epoch_loss))
+#         print('{} Loss: {:.4f}'.format(phase, epoch_loss))
 
         results[f"{phase}_loss"] = epoch_loss
     results["model"] = model
-    results["latent_dict"] = latent_dict
+#     results["latent_dict"] = latent_dict
     return results
 
 from master_init import *

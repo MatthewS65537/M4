@@ -31,7 +31,9 @@ class DiffusionHead(nn.Module):
         '''
         if "train" in args_dict and args_dict["train"]:
             emb=args_dict["input_data_batch"].to(self.dtype)
-            emb=emb.reshape(1, 1, 768)
+#             print(emb.shape)
+            emb=emb.reshape(emb.shape[0], 1, 768)
+#             print(emb.shape)
             g=7.5
             timesteps=args_dict["timesteps"]
             noisy_latents=args_dict["noisy_latents"].to(self.dtype)

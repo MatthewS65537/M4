@@ -94,37 +94,36 @@ if __name__ == "__main__":
     vae.requires_grad_(False)
     print(f"[INFO] LOADED PRETRAINS.")
     
-#     latent_dict = {}
     # Decision not to put dataloders into DSGTask() object
     # Will take too much space and some datasets repeatedly used for
     # different tasks.
     print(f"[INFO] SETTING UP TRAINING TASKS...")
     dsg_tasks = DSGTasks()
-#     dsg_tasks.add_task(
-#         DSGTask(
-#             task_name="EEG-TEXT-BART",
-#             dataset_tag="ZuCo-BART",
-#             criterion=nn.CrossEntropyLoss(), # Will use BART's own loss function (should also be CE Loss)
-#             optimizer=optim.Adam,
-#             learning_rate=5e-5,
-#             converge_lim=3,
-#             converge_threshold=0.05,
-#             div_threshold=0.01
-#             )
-#         )
+    dsg_tasks.add_task(
+        DSGTask(
+            task_name="EEG-TEXT-BART",
+            dataset_tag="ZuCo-BART",
+            criterion=nn.CrossEntropyLoss(), # Will use BART's own loss function (should also be CE Loss)
+            optimizer=optim.Adam,
+            learning_rate=5e-5,
+            converge_lim=3,
+            converge_threshold=0.05,
+            div_threshold=0.01
+            )
+        )
 
-#     dsg_tasks.add_task(
-#         DSGTask(
-#             task_name="EEG-IMG-DIFFUSION",
-#             dataset_tag="Brain2Image",
-#             criterion=nn.MSELoss(), # For Noise predicted by latents
-#             optimizer=optim.Adam,
-#             learning_rate=5e-3,
-#             converge_lim=2,
-#             converge_threshold=0.005,
-#             div_threshold=0.01
-#             )
-#         )
+    dsg_tasks.add_task(
+        DSGTask(
+            task_name="EEG-IMG-DIFFUSION",
+            dataset_tag="Brain2Image",
+            criterion=nn.MSELoss(), # For Noise predicted by latents
+            optimizer=optim.Adam,
+            learning_rate=5e-3,
+            converge_lim=2,
+            converge_threshold=0.005,
+            div_threshold=0.01
+            )
+        )
 
     dsg_tasks.add_task(
         DSGTask(
@@ -132,56 +131,53 @@ if __name__ == "__main__":
             dataset_tag="Brain2Image",
             criterion=nn.CrossEntropyLoss(), # CE Loss for 40 classes
             optimizer=optim.Adam,
-            learning_rate=5e-4,
+            learning_rate=5e-3,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
             )
         )
 
-#     dsg_tasks.add_task(
-#         DSGTask(
-#             task_name="EEG-TEXT-BART-SENTIMENT",
-#             dataset_tag="ZuCo-BART",
-#             criterion=nn.CrossEntropyLoss(), # CE Loss for Tenary Sentiment
-#             optimizer=optim.Adam,
-#             learning_rate=5e-3,
-#             converge_lim=2,
-#             converge_threshold=0.005,
-#             div_threshold=0.01
-#             )
-#         )
+    dsg_tasks.add_task(
+        DSGTask(
+            task_name="EEG-TEXT-BART-SENTIMENT",
+            dataset_tag="ZuCo-BART",
+            criterion=nn.CrossEntropyLoss(), # CE Loss for Tenary Sentiment
+            optimizer=optim.Adam,
+            learning_rate=5e-3,
+            converge_lim=2,
+            converge_threshold=0.005,
+            div_threshold=0.01
+            )
+        )
 
-#     dsg_tasks.add_task(
-#         DSGTask(
-#             task_name="PRETRAIN-EEG-TEXT-CLIP-MATCHING",
-#             dataset_tag="ZuCo-CLIP",
-#             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
-#             optimizer=optim.Adam,
-#             learning_rate=5e-5,
-#             converge_lim=2,
-#             converge_threshold=0.005,
-#             div_threshold=0.01
-#             )
-#         )
+    dsg_tasks.add_task(
+        DSGTask(
+            task_name="PRETRAIN-EEG-TEXT-CLIP-MATCHING",
+            dataset_tag="ZuCo-CLIP",
+            criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
+            optimizer=optim.Adam,
+            learning_rate=5e-5,
+            converge_lim=2,
+            converge_threshold=0.005,
+            div_threshold=0.01
+            )
+        )
     
-#     dsg_tasks.add_task(
-#         DSGTask(
-#             task_name="PRETRAIN-EEG-IMG-CLIP-MATCHING",
-#             dataset_tag="Brain2Image",
-#             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
-#             optimizer=optim.Adam,
-#             learning_rate=5e-5,
-#             converge_lim=2,
-#             converge_threshold=0.005,
-#             div_threshold=0.01
-#             )
-#         )
+    dsg_tasks.add_task(
+        DSGTask(
+            task_name="PRETRAIN-EEG-IMG-CLIP-MATCHING",
+            dataset_tag="Brain2Image",
+            criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
+            optimizer=optim.Adam,
+            learning_rate=5e-5,
+            converge_lim=2,
+            converge_threshold=0.005,
+            div_threshold=0.01
+            )
+        )
     
     print(f"[INFO] FINISHED SETTING UP TRAINING TASKS.")
-    
-    first_lr = {}
-    current_lr = {}
     
     print(f"[INFO] STARTING TRAINING.")
     for epoch in range(num_epochs):
@@ -285,11 +281,9 @@ if __name__ == "__main__":
                     "device_ids" : device_ids,
                     "staging_device" : staging_device,
                     "vae" : vae,
-#                     "latent_dict" : latent_dict
                 }
                 results = EEG_IMG_DIFFUSION.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
                 model = results["model"]
-#                 latent_dict = results["latent_dict"]
                 print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
                 train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
                 dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
