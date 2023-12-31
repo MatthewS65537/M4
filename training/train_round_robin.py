@@ -224,7 +224,7 @@ if __name__ == "__main__":
                     "staging_device" : staging_device,
                     "bsz" : 256,
                     "bool_eval" : True,
-                    "temperature" : 10
+                    "temperature" : 20
                 }
                 results = PRETRAIN_EEG_IMG_CLIP_MATCHING.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
                 print([key for key, val in results.items()])
@@ -264,7 +264,7 @@ if __name__ == "__main__":
                     "device" : device,
                     "device_ids" : device_ids,
                     "staging_device" : staging_device,
-                    "temperature" : 1000
+                    "temperature" : 0.04
                 }
                 results = EEG_TEXT_BART_SENTIMENT.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
                 model = results["model"]
@@ -296,7 +296,7 @@ if __name__ == "__main__":
                     "device" : device,
                     "device_ids" : device_ids,
                     "staging_device" : staging_device,
-                    "temperature" : 20
+                    "temperature" : 0.04
                 }
                 results = EEG_IMG_CLASSIFICATION.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
                 model = results["model"]
