@@ -69,6 +69,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
             )
             
             lst_targets = current_data["target"]
+            print(lst_targets)
             
 #             for i in range(real_bsz):
 #                 eegs = current_data["data"]
@@ -118,7 +119,8 @@ def train(args_dict, using_non_pytorch_parallel=False):
                     current = torch.argmax(output[i])
                     if current == i:
                         correct += 1
-                        tot += 1
+                    tot += 1
+            current_data = dataloader[phase].load_data()
 
         epoch_loss = running_loss / tot_cnt
 
