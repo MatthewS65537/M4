@@ -28,7 +28,7 @@ class ClassificationHead(nn.Module):
             self.to(device)
         self.to(dtype)
 
-    def forward(self, x, staging_device="cuda:0"):
+    def forward(self, x, temperature, staging_device="cuda:0"):
         """
         Forward pass of the Classification Neural Network model.
 
@@ -41,5 +41,5 @@ class ClassificationHead(nn.Module):
         """
         for layer in self.hidden_layers:
             x = self.activation(layer(x))
-        x = self.softmax(self.output_layer(x))  # Apply softmax activation
+        x = self.softmax(self.output_layer(x)/temperature)  # Apply softmax activation
         return x

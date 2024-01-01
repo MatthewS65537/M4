@@ -14,6 +14,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
     device = args_dict["device"] if "device" in args_dict else "cuda"
     device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
     staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
+    temperature = args_dict["temperature"]
 
     if staging_device==None:
         staging_device = f"cuda:{device_ids[0]}" if not device_ids == None else "cuda"
@@ -66,7 +67,8 @@ def train(args_dict, using_non_pytorch_parallel=False):
                 "input_masks_batch" : input_masks_batch,
                 "input_masks_invert" : input_mask_invert_batch,
                 "target_ids_batch" : target_ids_batch,
-                "pool_result" : True
+                "pool_result" : True,
+                "temperature" : temperature
                 }
 
             output = model(
@@ -80,11 +82,11 @@ def train(args_dict, using_non_pytorch_parallel=False):
             # Backward + Optimize only if in training phase
             if phase == 'train':
                 if device_ids == None:
-                        loss.backward()
-                        optimizer.step()
+                    loss.backward()
+                    optimizer.step()
                 else:
-                        loss.mean().backward()
-                        optimizer.step()
+                    loss.mean().backward()
+                    optimizer.step()
 
             # Compute stats
             if device_ids == None:

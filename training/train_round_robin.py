@@ -44,7 +44,7 @@ if __name__ == "__main__":
         "device" : "cuda",
         "device_ids" : [0,1,2,3],
         "staging_device" : "cuda",
-        "num_epochs" : 50,
+        "num_epochs" : 100,
         "use_non_pytorch_parallel" : False,
         "test_run" : False,
         "live_evaluate" : True,
@@ -79,8 +79,8 @@ if __name__ == "__main__":
         for key, val in dataset_dict.items():
             dataset_dict[key]["train"] = dataset_dict[key]["dev"] # Make things faster
             
-    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-t1000")
-    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-t100")
+    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-SRR")
+    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-SRR")
             
     print(f"[INFO] PARAMETER COUNT")
     print(f"[INFO] >>>> {count_params(model)} TOTAL PARAMETERS.")
@@ -94,7 +94,6 @@ if __name__ == "__main__":
     vae.requires_grad_(False)
     print(f"[INFO] LOADED PRETRAINS.")
     
-#     latent_dict = {}
     # Decision not to put dataloders into DSGTask() object
     # Will take too much space and some datasets repeatedly used for
     # different tasks.
@@ -106,7 +105,7 @@ if __name__ == "__main__":
             dataset_tag="ZuCo-BART",
             criterion=nn.CrossEntropyLoss(), # Will use BART's own loss function (should also be CE Loss)
             optimizer=optim.Adam,
-            learning_rate=5e-5,
+            learning_rate=5e-4,
             converge_lim=3,
             converge_threshold=0.05,
             div_threshold=0.01
@@ -132,7 +131,7 @@ if __name__ == "__main__":
             dataset_tag="Brain2Image",
             criterion=nn.CrossEntropyLoss(), # CE Loss for 40 classes
             optimizer=optim.Adam,
-            learning_rate=5e-4,
+            learning_rate=5e-3,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -180,14 +179,12 @@ if __name__ == "__main__":
     
     print(f"[INFO] FINISHED SETTING UP TRAINING TASKS.")
     
-    first_lr = {}
-    current_lr = {}
-    
     print(f"[INFO] STARTING TRAINING.")
     for epoch in range(num_epochs):
         print(f"Epoch {epoch}")
-        start = time.time()
+        epc_start = time.time()
         for task in dsg_tasks.tasks:
+            start = time.time()
             if task.name == "PRETRAIN-EEG-TEXT-CLIP-MATCHING":
                 args_dict = {
                     "model" : model,
@@ -205,8 +202,6 @@ if __name__ == "__main__":
                 results = PRETRAIN_EEG_TEXT_CLIP_MATCHING.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
                 model = results["model"]
                 print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
-                if epoch == 0:
-                    first_lr[task.name] = results['dev_loss']
                 current_lr[task.name] = results['dev_loss']
                 train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
                 dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
@@ -285,11 +280,10 @@ if __name__ == "__main__":
                     "device_ids" : device_ids,
                     "staging_device" : staging_device,
                     "vae" : vae,
-#                     "latent_dict" : latent_dict
+                    "bsz" : 64
                 }
                 results = EEG_IMG_DIFFUSION.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
                 model = results["model"]
-#                 latent_dict = results["latent_dict"]
                 print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
                 train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
                 dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
@@ -302,7 +296,8 @@ if __name__ == "__main__":
                     "device" : device,
                     "device_ids" : device_ids,
                     "staging_device" : staging_device,
-                    "temperature" : 0.04
+                    "temperature" : 0.04,
+                    "bsz" : 256
                 }
                 results = EEG_IMG_CLASSIFICATION.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
                 model = results["model"]
@@ -311,8 +306,8 @@ if __name__ == "__main__":
                 dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
             else:
                 print(f"[WARNING] Task {task.name} not found. Skipping.")
+        print(f"TOT TIME: {time.time() - epc_start:.2f} SECONDS")
             
-            if epoch % 10 == 0:
-                torch.save(model.state_dict(), "./BUF.pt")
-                with open("./log.txt", "w") as f:
-                    f.write(f"Epoch No. {epoch}\n")
+        if epoch % 10 == 0:
+            torch.save(model.state_dict(), f"./checkpoints/SimpleRoundRobin/MMMM_{epoch}.pt")
+    torch.save(model.state_dict(), f"./checkpoints/SimpleRoundRobin/MMMM_FINAL.pt")

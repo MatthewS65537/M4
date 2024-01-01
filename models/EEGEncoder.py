@@ -77,8 +77,9 @@ class EEGEncoder(nn.Module):
 
         elif mode == "EEG-IMG-BRAIN2IMAGE":
             input_data_batch = args_dict["input_data_batch"]
+            input_masks_invert = args_dict["input_masks_invert"]
             encoded_embedding = self.heads[mode](input_data_batch)
-            encoded_embedding = self.encoder(encoded_embedding)
+            encoded_embedding = self.encoder(encoded_embedding, src_key_padding_mask=input_masks_invert)
             encoded_embedding = F.relu(self.fc_proj(encoded_embedding))
             pool_result = args_dict["pool_result"]
             if pool_result:
