@@ -99,70 +99,70 @@ if __name__ == "__main__":
     # different tasks.
     print(f"[INFO] SETTING UP TRAINING TASKS...")
     dsg_tasks = DSGTasks()
-    dsg_tasks.add_task(
-        DSGTask(
-            task_name="EEG-TEXT-BART",
-            dataset_tag="ZuCo-BART",
-            criterion=nn.CrossEntropyLoss(), # Will use BART's own loss function (should also be CE Loss)
-            optimizer=optim.Adam,
-            learning_rate=5e-4,
-            converge_lim=3,
-            converge_threshold=0.05,
-            div_threshold=0.01
-            )
-        )
+#     dsg_tasks.add_task(
+#         DSGTask(
+#             task_name="EEG-TEXT-BART",
+#             dataset_tag="ZuCo-BART",
+#             criterion=nn.CrossEntropyLoss(), # Will use BART's own loss function (should also be CE Loss)
+#             optimizer=optim.Adam,
+#             learning_rate=5e-4,
+#             converge_lim=3,
+#             converge_threshold=0.05,
+#             div_threshold=0.01
+#             )
+#         )
 
-    dsg_tasks.add_task(
-        DSGTask(
-            task_name="EEG-IMG-DIFFUSION",
-            dataset_tag="Brain2Image",
-            criterion=nn.MSELoss(), # For Noise predicted by latents
-            optimizer=optim.Adam,
-            learning_rate=5e-3,
-            converge_lim=2,
-            converge_threshold=0.005,
-            div_threshold=0.01
-            )
-        )
+#     dsg_tasks.add_task(
+#         DSGTask(
+#             task_name="EEG-IMG-DIFFUSION",
+#             dataset_tag="Brain2Image",
+#             criterion=nn.MSELoss(), # For Noise predicted by latents
+#             optimizer=optim.Adam,
+#             learning_rate=5e-4,
+#             converge_lim=2,
+#             converge_threshold=0.005,
+#             div_threshold=0.01
+#             )
+#         )
 
-    dsg_tasks.add_task(
-        DSGTask(
-            task_name="EEG-IMG-CLASSIFICATION",
-            dataset_tag="Brain2Image",
-            criterion=nn.CrossEntropyLoss(), # CE Loss for 40 classes
-            optimizer=optim.Adam,
-            learning_rate=5e-3,
-            converge_lim=2,
-            converge_threshold=0.005,
-            div_threshold=0.01
-            )
-        )
+#     dsg_tasks.add_task(
+#         DSGTask(
+#             task_name="EEG-IMG-CLASSIFICATION",
+#             dataset_tag="Brain2Image",
+#             criterion=nn.CrossEntropyLoss(), # CE Loss for 40 classes
+#             optimizer=optim.Adam,
+#             learning_rate=5e-4,
+#             converge_lim=2,
+#             converge_threshold=0.005,
+#             div_threshold=0.01
+#             )
+#         )
 
-    dsg_tasks.add_task(
-        DSGTask(
-            task_name="EEG-TEXT-BART-SENTIMENT",
-            dataset_tag="ZuCo-BART",
-            criterion=nn.CrossEntropyLoss(), # CE Loss for Tenary Sentiment
-            optimizer=optim.Adam,
-            learning_rate=5e-3,
-            converge_lim=2,
-            converge_threshold=0.005,
-            div_threshold=0.01
-            )
-        )
+#     dsg_tasks.add_task(
+#         DSGTask(
+#             task_name="EEG-TEXT-BART-SENTIMENT",
+#             dataset_tag="ZuCo-BART",
+#             criterion=nn.CrossEntropyLoss(), # CE Loss for Tenary Sentiment
+#             optimizer=optim.Adam,
+#             learning_rate=5e-4,
+#             converge_lim=2,
+#             converge_threshold=0.005,
+#             div_threshold=0.01
+#             )
+#         )
 
-    dsg_tasks.add_task(
-        DSGTask(
-            task_name="PRETRAIN-EEG-TEXT-CLIP-MATCHING",
-            dataset_tag="ZuCo-CLIP",
-            criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
-            optimizer=optim.Adam,
-            learning_rate=5e-5,
-            converge_lim=2,
-            converge_threshold=0.005,
-            div_threshold=0.01
-            )
-        )
+#     dsg_tasks.add_task(
+#         DSGTask(
+#             task_name="PRETRAIN-EEG-TEXT-CLIP-MATCHING",
+#             dataset_tag="ZuCo-CLIP",
+#             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
+#             optimizer=optim.Adam,
+#             learning_rate=1e-5,
+#             converge_lim=2,
+#             converge_threshold=0.005,
+#             div_threshold=0.01
+#             )
+#         )
     
     dsg_tasks.add_task(
         DSGTask(
@@ -170,7 +170,7 @@ if __name__ == "__main__":
             dataset_tag="Brain2Image",
             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
             optimizer=optim.Adam,
-            learning_rate=5e-5,
+            learning_rate=1e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -202,7 +202,6 @@ if __name__ == "__main__":
                 results = PRETRAIN_EEG_TEXT_CLIP_MATCHING.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
                 model = results["model"]
                 print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
-                current_lr[task.name] = results['dev_loss']
                 train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
                 dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
                 
@@ -226,7 +225,7 @@ if __name__ == "__main__":
                     "temperature" : 20
                 }
                 results = PRETRAIN_EEG_IMG_CLIP_MATCHING.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
-                print([key for key, val in results.items()])
+#                 print([key for key, val in results.items()])
                 model = results["model"]
                 print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
                 train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
@@ -306,8 +305,12 @@ if __name__ == "__main__":
                 dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
             else:
                 print(f"[WARNING] Task {task.name} not found. Skipping.")
+            try:
+                del results
+            except:
+                pass
+
         print(f"TOT TIME: {time.time() - epc_start:.2f} SECONDS")
-            
         if epoch % 10 == 0:
             torch.save(model.state_dict(), f"./checkpoints/SimpleRoundRobin/MMMM_{epoch}.pt")
     torch.save(model.state_dict(), f"./checkpoints/SimpleRoundRobin/MMMM_FINAL.pt")
