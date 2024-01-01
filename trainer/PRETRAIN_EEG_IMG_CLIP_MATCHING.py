@@ -69,7 +69,6 @@ def train(args_dict, using_non_pytorch_parallel=False):
             )
             
             lst_targets = current_data["target"]
-            print(lst_targets)
             
 #             for i in range(real_bsz):
 #                 eegs = current_data["data"]
