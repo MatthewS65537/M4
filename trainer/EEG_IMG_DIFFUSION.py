@@ -37,6 +37,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
     vae = args_dict["vae"]
     device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
     staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
+    bsz = args_dict["bsz"] if "bsz" in args_dict else 64
 #     latent_dict = args_dict["latent_dict"]
     del args_dict
 
@@ -44,7 +45,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
         staging_device = f"cuda:{device_ids[0]}" if device_ids == None else "cuda"
     results = {}
     for phase in ['train', 'dev']:
-        dataloader[phase].set_bsz(32)
+        dataloader[phase].set_bsz(bsz)
         if phase == 'train':
             model.train()    # Set model to training mode
         else:
