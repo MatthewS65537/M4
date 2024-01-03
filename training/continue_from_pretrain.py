@@ -70,7 +70,7 @@ if __name__ == "__main__":
         model = DataParallelModel(model, device_ids=device_ids).to(device)
     else:
         model = nn.DataParallel(model, device_ids=device_ids).to(device)
-    model.load_state_dict(torch.load(f"./checkpoints/Pretrains/MMMM_FINAL.pt"))
+    model.load_state_dict(torch.load(f"./checkpoints/Pretrain/MMMM_FINAL.pt"))
     dataset_dict = INITIALIZE_DATALOADERS(
         keys=["ZuCo-BART", "ZuCo-CLIP", "Brain2Image"],
         bsz=[256, 256, 1],
@@ -81,7 +81,7 @@ if __name__ == "__main__":
             dataset_dict[key]["train"] = dataset_dict[key]["dev"] # Make things faster
             
     train_writer = SummaryWriter(log_dir=f"{log_dir}/train-pretrain-continue")
-    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-pretraion-continue")
+    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-pretrain-continue")
             
     print(f"[INFO] PARAMETER COUNT")
     print(f"[INFO] >>>> {count_params(model)} TOTAL PARAMETERS.")
