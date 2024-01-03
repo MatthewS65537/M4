@@ -46,6 +46,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
     results = {}
     for phase in ['train', 'dev']:
         dataloader[phase].set_bsz(bsz)
+        dataloader[phase].reset()
         if phase == 'train':
             model.train()    # Set model to training mode
         else:

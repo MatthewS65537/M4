@@ -66,6 +66,7 @@ if __name__ == "__main__":
     
     print(f"[INFO] INITIALIZING MODEL.")
     model = INITIALIZE_MODEL(device=None, device_ids=device_ids, dtype=torch.float32)
+    model.zero_grad()
     print(f"[INFO] GRAD FREE PARAMETERS:")
     for name, param in model.named_parameters():
         if param.requires_grad:
@@ -162,7 +163,7 @@ if __name__ == "__main__":
             dataset_tag="Brain2Image",
             criterion=nn.MSELoss(), # For Noise predicted by latents
             optimizer=optim.Adam,
-            learning_rate=5e-5,
+            learning_rate=2.5e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.005
@@ -285,7 +286,7 @@ if __name__ == "__main__":
                     "device_ids" : device_ids,
                     "staging_device" : staging_device,
                     "vae" : vae,
-                    "bsz" : 64
+                    "bsz" : 32
 #                     "latent_dict" : latent_dict
                 }
                 results = EEG_IMG_DIFFUSION.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
