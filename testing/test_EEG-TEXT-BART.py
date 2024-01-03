@@ -62,7 +62,8 @@ def eval_model(dataloader, device, tokenizer, criterion, model, output_all_resul
                 "input_data_batch" : input_embeddings_batch,
                 "input_masks_batch" : input_masks_batch,
                 "input_masks_invert" : input_mask_invert_batch,
-                "target_ids_batch" : target_ids_batch
+                "target_ids_batch" : target_ids_batch,
+                "pool_result" : False
                 }
             
             seq2seqLMoutput = model(
@@ -96,7 +97,7 @@ def eval_model(dataloader, device, tokenizer, criterion, model, output_all_resul
             
             # Compute Statistics
             sample_count += 1
-            running_loss += loss.item() * input_embeddings_batch.size()[0] # batch loss
+            running_loss += loss.item() * input_embeddings_batch.shape[0] # batch loss
             current_data = dataloader[phase].load_data()
 
         epoch_loss = running_loss / sample_count
@@ -121,22 +122,23 @@ def eval_model(dataloader, device, tokenizer, criterion, model, output_all_resul
 
 
 if __name__ == '__main__': 
-    CKPT_DIR = "./Checkpoints/MMMM_EEG-TEXT-BART"
-    RESULTS_DIR = "./Results/MMMM_EEG-TEXT-BART"
-    MODEL_NAME = "EEG-TEXT-BART-TUNED-ADAM-MIMIC"
-    FINAL_BEST = "BEST"
+    CKPT_DIR = "./checkpoints/SimpleRoundRobin"
+    RESULTS_DIR = "./results/SimpleRoundRobin"
+    MODEL_NAME = "MMMM_50"
     
     device="cuda"
     device_ids=[0,1,2,3]
     
-    model = INITIALIZE_MODEL(device=device, device_ids=device_ids).to(device)
-    model = nn.DataParallel(model, device_ids=device_ids)
-    state_dict=torch.load(f"{CKPT_DIR}/{MODEL_NAME}_{FINAL_BEST}.pt")
+    model = INITIALIZE_MODEL(device=device, device_ids=device_ids)
+    model = nn.DataParallel(model, device_ids=device_ids).to(device)
+    state_dict=torch.load(f"{CKPT_DIR}/{MODEL_NAME}.pt")
     model.load_state_dict(state_dict)
     print("[INFO] Loaded model checkpoint.")
     
     dataloaders = INITIALIZE_DATALOADERS(
         keys=["ZuCo-BART"],
+        bsz=[1],
+        dev_bsz=[1]
     )
     ZuCo_dataloader=dataloaders["ZuCo-BART"]
     print("[INFO] Intialized dataloaders.")
@@ -146,4 +148,4 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     
     ''' eval '''
-    eval_model(ZuCo_dataloader, device, tokenizer, criterion, model, output_all_results_path=f"{RESULTS_DIR}/all_decoding_results_{MODEL_NAME}_{FINAL_BEST}.txt", device_ids=device_ids)
+    eval_model(ZuCo_dataloader, device, tokenizer, criterion, model, output_all_results_path=f"{RESULTS_DIR}/all_decoding_results_{MODEL_NAME}.txt", device_ids=device_ids)
