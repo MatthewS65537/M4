@@ -61,10 +61,10 @@ class DSGTask():
             self.best_val_loss = val_loss
             self.best_loss_epoch = cur_epoch
 
-        if val_loss > (self.best_val_loss + self.divergence_threshold):
+        if val_loss > (self.best_val_loss * (1 + self.divergence_threshold)):
             self.diverged = True
 
-        self.convergence_rate = (self.past_val_loss[-self.convergence_limit - 1] - self.past_val_loss[-1]) / (self.convergence_limit)
+        self.convergence_rate = (self.past_val_loss[-self.convergence_limit - 1] - self.past_val_loss[-1]) / (self.past_val_loss[-self.convergence_limit - 1] * self.convergence_limit)
 
         if self.final_round:
             return None

@@ -58,6 +58,8 @@ def train(args_dict, using_non_pytorch_parallel=False):
                 "temperature" : temperature
             }
             
+            optimizer.zero_grad()
+            
             output = model(
                 mode="EEG-IMG-BRAIN2IMAGE-CLASSIFICATION",
                 args_dict=args_dict,

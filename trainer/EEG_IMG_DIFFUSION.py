@@ -105,17 +105,18 @@ def train(args_dict, using_non_pytorch_parallel=False):
 #             noisy_latents = latents + noise
 
             optimizer.zero_grad()
-
-            args_dict = {
-                "input_data_batch" : eeg_batch,
-                "input_masks_batch" : masks_batch,
-                "input_masks_invert" : invert_masks_batch,
-                "pool_result" : True,
-                "noisy_latents" : noisy_latents.to(dtype=torch.float32),
-                "timesteps" : timesteps,
-                "train" : True
-            }
-            model_pred = model("EEG-IMG-DIFFUSION", args_dict)
+    
+            with torch.no_grad():
+                args_dict = {
+                    "input_data_batch" : eeg_batch,
+                    "input_masks_batch" : masks_batch,
+                    "input_masks_invert" : invert_masks_batch,
+                    "pool_result" : True,
+                    "noisy_latents" : noisy_latents.to(dtype=torch.float32),
+                    "timesteps" : timesteps,
+                    "train" : True
+                }
+                model_pred = model("EEG-IMG-DIFFUSION", args_dict)
             
             loss = criterion(model_pred, noise)
             loss.backward()

@@ -23,9 +23,11 @@ def train(args_dict, using_non_pytorch_parallel=False):
     results = {}
     for phase in ['train', 'dev']:
         if phase == 'train':
+            dataloader[phase].reset()
             model.train()    # Set model to training mode
         else:
             dataloader[phase].set_bsz(dev_bsz)
+            dataloader[phase].reset()
             model.eval()     # Set model to evaluate mode
 
         running_loss = 0.0
@@ -104,71 +106,71 @@ def train(args_dict, using_non_pytorch_parallel=False):
     results["model"] = model
     return results
 
-def evaluate(args_dict):
-    dataloader = args_dict["dataloader"]
-    model = args_dict["model"]
-    tokenizer = args_dict["tokenizer"]
-    device = args_dict["device"] if "device" in args_dict else "cuda"
-    device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
-    staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
-    dev_bsz = args_dict["dev_bsz"] if "dev_bsz" in args_dict else 64
+# def evaluate(args_dict):
+#     dataloader = args_dict["dataloader"]
+#     model = args_dict["model"]
+#     tokenizer = args_dict["tokenizer"]
+#     device = args_dict["device"] if "device" in args_dict else "cuda"
+#     device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
+#     staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
+#     dev_bsz = args_dict["dev_bsz"] if "dev_bsz" in args_dict else 64
 
-    if staging_device==None:
-        staging_device = f"cuda:{device_ids[0]}" if device_ids == None else "cuda"
-    results = {}
-    for phase in ['train', 'dev']:
-        if phase == 'train':
-            model.train()    # Set model to training mode
-        else:
-            dataloader[phase].set_bsz(dev_bsz)
-            model.eval()     # Set model to evaluate mode
+#     if staging_device==None:
+#         staging_device = f"cuda:{device_ids[0]}" if device_ids == None else "cuda"
+#     results = {}
+#     for phase in ['train', 'dev']:
+#         if phase == 'train':
+#             model.train()    # Set model to training mode
+#         else:
+#             dataloader[phase].set_bsz(dev_bsz)
+#             model.eval()     # Set model to evaluate mode
 
-        correct = 0
-        tot = 0
+#         correct = 0
+#         tot = 0
 
-        # Iterate over data.
-        current_data = dataloader[phase].load_data()
-        while not current_data["reset"]:
-            input_embeddings, seq_len, input_masks, input_mask_invert, target_ids, target_mask, sentiment_labels, sent_level_EEG = current_data["data"]
+#         # Iterate over data.
+#         current_data = dataloader[phase].load_data()
+#         while not current_data["reset"]:
+#             input_embeddings, seq_len, input_masks, input_mask_invert, target_ids, target_mask, sentiment_labels, sent_level_EEG = current_data["data"]
 
-            input_embeddings_batch = input_embeddings
-            input_masks_batch = input_masks
-            input_mask_invert_batch = input_mask_invert
-            target_ids_batch = target_ids
+#             input_embeddings_batch = input_embeddings
+#             input_masks_batch = input_masks
+#             input_mask_invert_batch = input_mask_invert
+#             target_ids_batch = target_ids
 
-            """replace padding ids in target_ids with -100"""
-            target_ids_batch[target_ids_batch == tokenizer.pad_token_id] = -100
+#             """replace padding ids in target_ids with -100"""
+#             target_ids_batch[target_ids_batch == tokenizer.pad_token_id] = -100
 
-            model.zero_grad()
+#             model.zero_grad()
 
-            args_dict = {
-                "input_data_batch" : input_embeddings_batch.to(dtype=torch.float32),
-                "input_masks_batch" : input_masks_batch.to(dtype=torch.float32),
-                "input_masks_invert" : input_mask_invert_batch.to(dtype=torch.float32),
-                "target_ids_batch" : target_ids_batch,
-                "pool_result" : False
-                }
+#             args_dict = {
+#                 "input_data_batch" : input_embeddings_batch.to(dtype=torch.float32),
+#                 "input_masks_batch" : input_masks_batch.to(dtype=torch.float32),
+#                 "input_masks_invert" : input_mask_invert_batch.to(dtype=torch.float32),
+#                 "target_ids_batch" : target_ids_batch,
+#                 "pool_result" : False
+#                 }
 
-            output = model(
-                mode="PRETRAIN-EEG-TEXT-CLIP-MATCHING",
-                args_dict=args_dict,
-                staging_device=staging_device,
-            )
+#             output = model(
+#                 mode="PRETRAIN-EEG-TEXT-CLIP-MATCHING",
+#                 args_dict=args_dict,
+#                 staging_device=staging_device,
+#             )
 
-            target_embed = current_data["target"].to(torch.float32)
-            target_embeds_pooled = torch.mean(target_embed, dim=1)
-            target_pairwise_embeds = torch.mm(target_embeds_pooled, target_embeds_pooled.T)
+#             target_embed = current_data["target"].to(torch.float32)
+#             target_embeds_pooled = torch.mean(target_embed, dim=1)
+#             target_pairwise_embeds = torch.mm(target_embeds_pooled, target_embeds_pooled.T)
 
-            output = torch.mean(output, dim=1).to(torch.float32)
-            output = torch.mm(output, target_embeds_pooled.T)
+#             output = torch.mean(output, dim=1).to(torch.float32)
+#             output = torch.mm(output, target_embeds_pooled.T)
 
-            for i in range(output.shape[0]):
-                current = torch.argmax(output[i])
-                if current == i:
-                    correct += 1
-                tot += 1
+#             for i in range(output.shape[0]):
+#                 current = torch.argmax(output[i])
+#                 if current == i:
+#                     correct += 1
+#                 tot += 1
 
-            current_data = dataloader[phase].load_data()
-            results[f"{phase}_accuracy"] = correct / tot
-    model.zero_grad()
-    return results
+#             current_data = dataloader[phase].load_data()
+#             results[f"{phase}_accuracy"] = correct / tot
+#     model.zero_grad()
+#     return results
