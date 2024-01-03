@@ -66,6 +66,22 @@ if __name__ == "__main__":
     
     print(f"[INFO] INITIALIZING MODEL.")
     model = INITIALIZE_MODEL(device=None, device_ids=device_ids, dtype=torch.float32)
+    print(f"[INFO] GRAD FREE PARAMETERS:")
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            if "branches.EEG-IMG-DIFFUSION.body.unet" in name:
+                if ('down_blocks' in name) or ('conv_in' in name) or ('time_embedding' in name):
+                    continue
+                else:
+                    print(name)
+                    param.requires_grad = False
+            elif "branches.EEG-TEXT-BART.body.model" in name:
+                if ('shared' in name) or ('embed_positions' in name) or ('encoder.layers.0' in name) or ('encoder.layers.1' in name):
+                    continue
+                else:
+                    print(name)
+                    param.requires_grad = False
+
     if use_non_pytorch_parallel:
         model = DataParallelModel(model, device_ids=device_ids).to(device)
     else:
@@ -298,6 +314,7 @@ if __name__ == "__main__":
             task.update(epoch, results['dev_loss'])
             if task.should_keep_training():
                 model = results["model"]
+            del results
                 
         if not DSG_tasks.should_keep_training():
             DSG_tasks.reset_convergence()
