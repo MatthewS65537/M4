@@ -65,29 +65,37 @@ if __name__ == "__main__":
     print(f"[INFO] FINISHED CONFIGURATIONS.")
     
     print(f"[INFO] INITIALIZING MODEL.")
-    model = INITIALIZE_MODEL(device=None, device_ids=device_ids, dtype=torch.float32)
-    model.zero_grad()
+    model = INITIALIZE_MODEL(device=device, device_ids=device_ids, dtype=torch.float32)
+    print(f"[INFO] INITIALIZED MODEL.")
+    model = nn.DataParallel(model, device_ids=device_ids).to(device,dtype=torch.float32)
+    print(f"[INFO] WRAPPED MODEL IN nn.DataParallel().")
+    state_dict = torch.load(f"./checkpoints/Pretrain/MMMM_FINAL.pt")
+    model.load_state_dict(state_dict)
+    del state_dict
     print(f"[INFO] GRAD FREE PARAMETERS:")
     for name, param in model.named_parameters():
-        if param.requires_grad:
-            if "branches.EEG-IMG-DIFFUSION.body.unet" in name:
-                if ('down_blocks' in name) or ('conv_in' in name) or ('time_embedding' in name):
-                    continue
-                else:
-                    print(name)
-                    param.requires_grad = False
-            elif "branches.EEG-TEXT-BART.body.model" in name:
-                if ('shared' in name) or ('embed_positions' in name) or ('encoder.layers.0' in name) or ('encoder.layers.1' in name):
-                    continue
-                else:
-                    print(name)
-                    param.requires_grad = False
-
-    if use_non_pytorch_parallel:
-        model = DataParallelModel(model, device_ids=device_ids).to(device)
-    else:
-        model = nn.DataParallel(model, device_ids=device_ids).to(device)
-    model.load_state_dict(torch.load(f"./checkpoints/Pretrain/MMMM_FINAL.pt"))
+        print(name, end=" ")
+        param.requires_grad = True
+        if "eeg_encoder" in name:
+            print("NO GRAD")
+            param.requires_grad = False
+        if "branches.EEG-IMG-DIFFUSION.body.unet" in name:
+            if ('down_blocks' in name) or ('conv_in' in name) or ('time_embedding' in name):
+                print("YES GRAD")
+                continue
+            else:
+                print("NO GRAD")
+                param.requires_grad = False
+        elif "branches.EEG-TEXT-BART.body.model" in name:
+            if ('shared' in name) or ('embed_positions' in name) or ('encoder.layers.0' in name) or ('encoder.layers.1' in name):
+                print("YES GRAD")
+                continue
+            else:
+                print("NO GRAD")
+                param.requires_grad = False
+        else:
+            print()
+    print(f"[INFO] Initializing Dataloaders")
     dataset_dict = INITIALIZE_DATALOADERS(
         keys=["ZuCo-BART", "ZuCo-CLIP", "Brain2Image"],
         bsz=[256, 256, 1],
@@ -97,6 +105,7 @@ if __name__ == "__main__":
         for key, val in dataset_dict.items():
             dataset_dict[key]["train"] = dataset_dict[key]["dev"] # Make things faster
             
+    print(f"[INFO] Finished initializing Dataloaders")
     train_writer = SummaryWriter(log_dir=f"{log_dir}/train-pretrain-continue")
     dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-pretrain-continue")
             
@@ -119,31 +128,32 @@ if __name__ == "__main__":
     print(f"[INFO] SETTING UP TRAINING TASKS...")
     dsg_tasks = DSGTasks()
     
-    dsg_tasks.add_task(
-    DSGTask(
-        task_name="PRETRAIN-EEG-TEXT-CLIP-MATCHING",
-        dataset_tag="ZuCo-CLIP",
-        criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
-        optimizer=optim.Adam,
-        learning_rate=2e-5,
-        converge_lim=2,
-        converge_threshold=0.0005,
-        div_threshold=0.02
-        )
-    )
+#     dsg_tasks.add_task(
+#     DSGTask(
+#         task_name="PRETRAIN-EEG-TEXT-CLIP-MATCHING",
+#         dataset_tag="ZuCo-CLIP",
+#         criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
+#         optimizer=optim.Adam,
+#         learning_rate=5e-5,
+#         converge_lim=2,
+#         converge_threshold=0.0005,
+#         div_threshold=0.02
+#         )
+#     )
 
-    dsg_tasks.add_task(
-    DSGTask(
-        task_name="PRETRAIN-EEG-IMG-CLIP-MATCHING",
-        dataset_tag="Brain2Image",
-        criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
-        optimizer=optim.Adam,
-        learning_rate=2.5e-5,
-        converge_lim=2,
-        converge_threshold=0.005,
-        div_threshold=0.005
-        )
-    )
+#     dsg_tasks.add_task(
+#     DSGTask(
+#         task_name="PRETRAIN-EEG-IMG-CLIP-MATCHING",
+#         dataset_tag="Brain2Image",
+#         criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
+#         optimizer=optim.Adam,
+#         learning_rate=5e-5,
+#         converge_lim=2,
+#         converge_threshold=0.005,
+#         div_threshold=0.005
+#         )
+#     )
+
     dsg_tasks.add_task(
         DSGTask(
             task_name="EEG-TEXT-BART",
@@ -163,7 +173,7 @@ if __name__ == "__main__":
             dataset_tag="Brain2Image",
             criterion=nn.MSELoss(), # For Noise predicted by latents
             optimizer=optim.Adam,
-            learning_rate=2.5e-5,
+            learning_rate=5e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.005
@@ -207,7 +217,9 @@ if __name__ == "__main__":
     while epoch < num_epochs:
         print(f"Epoch {epoch}")
         start = time.time()
+        torch.cuda.empty_cache()
         for task in dsg_tasks.tasks:
+            print(f">>>> {task.name}")
             if task.name == "PRETRAIN-EEG-TEXT-CLIP-MATCHING":
                 args_dict = {
                     "model" : model,
@@ -286,7 +298,7 @@ if __name__ == "__main__":
                     "device_ids" : device_ids,
                     "staging_device" : staging_device,
                     "vae" : vae,
-                    "bsz" : 32
+                    "bsz" : 64
 #                     "latent_dict" : latent_dict
                 }
                 results = EEG_IMG_DIFFUSION.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
@@ -309,7 +321,7 @@ if __name__ == "__main__":
                 print(f"[WARNING] Task {task.name} not found. Skipping.")
                 continue
                 
-            print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
+            print(f"TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
             train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
             dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
             task.update(epoch, results['dev_loss'])
@@ -317,8 +329,8 @@ if __name__ == "__main__":
                 model = results["model"]
             del results
                 
-        if not DSG_tasks.should_keep_training():
-            DSG_tasks.reset_convergence()
+        if not dsg_tasks.should_keep_training():
+            dsg_tasks.reset_convergence()
             if lr_alt % 2 == 0:
                 lr_scale *= gamma ** 2
             else:

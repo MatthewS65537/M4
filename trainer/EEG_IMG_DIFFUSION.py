@@ -109,6 +109,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
             loss = criterion(model_pred, noise)
             if phase == 'train':
                 loss.mean().backward()
+#                 loss.backward()
                 optimizer.step()
             
             # statistics

@@ -119,9 +119,9 @@ def evaluate(args_dict, save_results_path = None):
     return results
 
 if __name__ == "__main__":
-    CKPT_DIR = "./checkpoints/SimpleRoundRobin"
-    RESULTS_DIR = "./results/SimpleRoundRobin"
-    MODEL_NAME = "MMMM_50"
+    CKPT_DIR = "./checkpoints/Pretrain"
+    RESULTS_DIR = "./results/Pretrain"
+    MODEL_NAME = "MMMM_FINAL"
     
     device="cuda"
     device_ids=[0,1,2,3]

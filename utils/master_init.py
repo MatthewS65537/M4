@@ -63,9 +63,12 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             dtype=dtype
             )
         )
+    
+    print("LOADED EEG ENCODER")
 
     CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(dtype=dtype)
     # image_encoder = CLIPImageModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
+    print("LOADED CLIP ENCODER")
         
     ### CREATE MMMM MODEL ###
     model = MMMM(
@@ -83,6 +86,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
     ### LOAD EEG-TEXT-BART ###
     BART_tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
     BART_pretrained = BartForConditionalGeneration.from_pretrained('facebook/bart-large').to(dtype=dtype)
+    print("LOADED BART MODEL")
     
 #     if not device_ids == None:
 #         BART_pretrained = nn.DistributedDataParallel(BART_pretrained, device_ids=device_ids)
@@ -125,6 +129,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
                 continue
             else:
                 param.requires_grad = False
+                
+    print("LOADED EEG-TEXT-BART")
 
     ### LOAD EEG-IMG-BRAIN2IMAGE ###
     
@@ -140,9 +146,12 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
                 continue
             else:
                 param.requires_grad = False
+                
+    print("LOADED U-NET")
 
     # Initializing CLIP Pretrains
     CLIPtokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+    print("LOADED CLIP TOKENIZER")
     # CLIPtext_encoder is already initialized
     # CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
 
@@ -182,6 +191,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             dtype=dtype
             )
     )
+    
+    print("LOADED EEG-IMG-DIFFUSION")
 
     ### LOAD CLASSIFICATION HEADS ###
     IMAGENET_CLASSIFICATION_branch = Branch(
@@ -221,6 +232,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             dtype=dtype
             )
         )
+    print("LOADED EEG-IMG-CLASSIFICATION")
     
     SENTIMENT_branch = Branch(
         head=FCN(
@@ -255,6 +267,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             dtype=dtype
         )
     )
+    print("LOADED EEG-TEXT-SENTIMENT")
     
     return model
 
