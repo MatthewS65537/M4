@@ -23,7 +23,7 @@ from nltk.translate.bleu_score import sentence_bleu, corpus_bleu
 from rouge import Rouge
 
 
-def evaluate(output_all_results_path = './Results/MMMM_EEG-TEXT-BART/all_decoding_results.txt', device_ids=None):
+def evaluate(args_dict, output_all_results_path = './Results/MMMM_EEG-TEXT-BART/all_decoding_results.txt', device_ids=None):
     dataloader, device, tokenizer, criterion, model = args_dict["dataloader"], args_dict["device"], args_dict["tokenizer"], args_dict["criterion"], args_dict["model"]
     staging_device = f"cuda:{device_ids[0]}" if device_ids == None else "cuda"
     model.eval()
@@ -116,6 +116,8 @@ def evaluate(output_all_results_path = './Results/MMMM_EEG-TEXT-BART/all_decodin
         print()
         f.write('\n')
         """ calculate rouge score """
+        print(pred_string_list)
+        print(target_string_list)
         rouge = Rouge()
         rouge_scores = rouge.get_scores(pred_string_list,target_string_list, avg = True)
         print(rouge_scores)
@@ -123,9 +125,9 @@ def evaluate(output_all_results_path = './Results/MMMM_EEG-TEXT-BART/all_decodin
 
 
 if __name__ == '__main__': 
-    CKPT_DIR = "./checkpoints/SimpleRoundRobin"
-    RESULTS_DIR = "./results/SimpleRoundRobin"
-    MODEL_NAME = "MMMM_50"
+    CKPT_DIR = "./checkpoints/Pretrain"
+    RESULTS_DIR = "./results/Pretrain"
+    MODEL_NAME = "MMMM_FINAL"
     
     device="cuda"
     device_ids=[0,1,2,3]
@@ -157,4 +159,4 @@ if __name__ == '__main__':
     }
     
     ''' eval '''
-    evaluate(args_dict, output_all_results_path=f"{RESULTS_DIR}/all_decoding_results_{MODEL_NAME}.txt", device_ids=device_ids)
+    evaluate(args_dict, output_all_results_path=f"{RESULTS_DIR}/all_decoding_results.txt", device_ids=device_ids)

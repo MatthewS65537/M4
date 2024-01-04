@@ -185,6 +185,7 @@ if __name__ == "__main__":
         epc_start = time.time()
         for task in dsg_tasks.tasks:
             start = time.time()
+            torch.cuda.empty_cache()
             if task.name == "PRETRAIN-EEG-TEXT-CLIP-MATCHING":
                 args_dict = {
                     "model" : model,

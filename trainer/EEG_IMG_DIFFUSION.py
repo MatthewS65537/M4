@@ -46,6 +46,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
     results = {}
     for phase in ['train', 'dev']:
         dataloader[phase].set_bsz(bsz)
+        dataloader[phase].reset()
         if phase == 'train':
             model.train()    # Set model to training mode
         else:
@@ -91,36 +92,25 @@ def train(args_dict, using_non_pytorch_parallel=False):
             noise = torch.randn_like(latents)
             noisy_latents = latents + noise
             
-#             # FIX THIS!
-#             if not len(latents) == 1:
-#                 print("[WARNING] BSZ NOT 1. AUTOMATICALLY DROPPING ALL BUT FIRST IN BATCH.")
-#             latents = latents[0]
-
-#             noise = torch.randn_like(latents)
-            bsz = latents.shape[0]
-
-#             timesteps = torch.randint(0, 30, (bsz,))
-#             timesteps = timesteps.long()
-
-#             noisy_latents = latents + noise
-
+            model.zero_grad()
             optimizer.zero_grad()
-    
-            with torch.no_grad():
-                args_dict = {
-                    "input_data_batch" : eeg_batch,
-                    "input_masks_batch" : masks_batch,
-                    "input_masks_invert" : invert_masks_batch,
-                    "pool_result" : True,
-                    "noisy_latents" : noisy_latents.to(dtype=torch.float32),
-                    "timesteps" : timesteps,
-                    "train" : True
-                }
-                model_pred = model("EEG-IMG-DIFFUSION", args_dict)
+
+            args_dict = {
+                "input_data_batch" : eeg_batch,
+                "input_masks_batch" : masks_batch,
+                "input_masks_invert" : invert_masks_batch,
+                "pool_result" : True,
+                "noisy_latents" : noisy_latents.to(dtype=torch.float32),
+                "timesteps" : timesteps,
+                "train" : True
+            }
+            model_pred = model("EEG-IMG-DIFFUSION", args_dict)
             
             loss = criterion(model_pred, noise)
-            loss.backward()
-            optimizer.step()
+            if phase == 'train':
+                loss.mean().backward()
+#                 loss.backward()
+                optimizer.step()
             
             # statistics
             running_loss += loss.item() * bsz
