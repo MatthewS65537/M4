@@ -187,75 +187,6 @@ if __name__ == "__main__":
                     print(f">>>>>>>> TRAIN ACCURACY: {results['train_accuracy'] * 100 : 8.4f} % DEV ACCURACY: {results['dev_accuracy'] * 100 : 8.4f} %")
                     train_writer.add_scalar(f"{task.name} Accuracy", results['train_accuracy'] * 100, epoch)
                     dev_writer.add_scalar(f"{task.name} Accuracy", results['dev_accuracy'] * 100, epoch)
-                
-                
-            elif task.name == "EEG-TEXT-BART":
-                args_dict = {
-                    "model" : model,
-                    "dataloader" : dataset_dict[task.dataset_tag],
-                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate),
-                    "tokenizer" : BART_tokenizer,
-                    "criterion" : task.criterion, # Placeholder for BART LM Loss
-                    "device" : device,
-                    "device_ids" : device_ids,
-                    "staging_device" : staging_device
-                }
-                results = EEG_TEXT_BART.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
-                model = results["model"]
-                print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
-                train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
-                dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
-            elif task.name == "EEG-TEXT-BART-SENTIMENT":
-                args_dict = {
-                    "model" : model,
-                    "dataloader" : dataset_dict[task.dataset_tag],
-                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate),
-                    "criterion" : task.criterion,
-                    "tokenizer" : BART_tokenizer,
-                    "device" : device,
-                    "device_ids" : device_ids,
-                    "staging_device" : staging_device,
-                    "temperature" : 0.04
-                }
-                results = EEG_TEXT_BART_SENTIMENT.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
-                model = results["model"]
-                print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
-                train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
-                dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
-            elif task.name == "EEG-IMG-DIFFUSION":
-                args_dict = {
-                    "model" : model,
-                    "dataloader" : dataset_dict[task.dataset_tag],
-                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate),
-                    "criterion" : task.criterion,
-                    "device" : device,
-                    "device_ids" : device_ids,
-                    "staging_device" : staging_device,
-                    "vae" : vae,
-                    "bsz" : 64
-                }
-                results = EEG_IMG_DIFFUSION.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
-                model = results["model"]
-                print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
-                train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
-                dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
-            elif task.name == "EEG-IMG-CLASSIFICATION":
-                args_dict = {
-                    "model" : model,
-                    "dataloader" : dataset_dict[task.dataset_tag],
-                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate),
-                    "criterion" : task.criterion,
-                    "device" : device,
-                    "device_ids" : device_ids,
-                    "staging_device" : staging_device,
-                    "temperature" : 0.04,
-                    "bsz" : 256
-                }
-                results = EEG_IMG_CLASSIFICATION.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
-                model = results["model"]
-                print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
-                train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
-                dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
             else:
                 print(f"[WARNING] Task {task.name} not found. Skipping.")
             try:
@@ -264,6 +195,6 @@ if __name__ == "__main__":
                 pass
         print(f"TOT TIME: {time.time() - epc_start:.2f} SECONDS")
         if epoch % 10 == 0:
-            torch.save(model.state_dict(), f"./checkpoints/DSG/MMMM_{epoch}.pt")
+            torch.save(model.state_dict(), f"./checkpoints/PretrainPlus/MMMM_{epoch}.pt")
         epoch += 1
-    torch.save(model.state_dict(), f"./checkpoints/DSG/MMMM_FINAL.pt")
+    torch.save(model.state_dict(), f"./checkpoints/PretrainPlus/MMMM_FINAL.pt")

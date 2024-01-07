@@ -5,7 +5,7 @@ import torch.nn.functional as F
 # Fully Connected Network
 # Used as task head, adapter, projection, etc.
 class FCN(nn.Module):
-    def __init__(self, input_dim=512, output_dim=1024, hidden_dim=1024, num_layers=2, device=None, dtype=torch.float32):
+    def __init__(self, input_dim=512, output_dim=1024, hidden_dim=1024, num_layers=2, device=None, dtype=torch.float32, dropout=None):
         """
         Fully Connected Network (FCN) model.
 
@@ -28,6 +28,7 @@ class FCN(nn.Module):
             self.to(device)
         self.dtype = dtype
         self.to(dtype=dtype)
+        self.dropout = dropout
 
     def forward(self, x, staging_device="cuda:0"):
         """
@@ -41,6 +42,8 @@ class FCN(nn.Module):
             torch.Tensor: Output tensor of shape (batch_size, output_dim).
         """
         for layer in self.hidden_layers:
+            if not self.dropout == None:
+                x = nn.Dropout(p=self.dropout)
             x = self.activation(layer(x))
         x = self.activation(self.output_layer(x))
         return x

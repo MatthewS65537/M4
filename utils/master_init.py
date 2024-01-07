@@ -7,6 +7,7 @@ from EEGEncoder import *
 from DiffusionHead import *
 from ClassificationHead import *
 from MMMM import *
+from emb_unet import *
 from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig, CLIPTokenizer, CLIPTextModel
 from diffusers import UNet2DConditionModel, LMSDiscreteScheduler
 from load_data import *
@@ -69,7 +70,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
     CLIPtext_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(dtype=dtype)
     # image_encoder = CLIPImageModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
     print("LOADED CLIP ENCODER")
-        
+
+    emb_unet = UNET(device=device, dtype=dtype)
+
     ### CREATE MMMM MODEL ###
     model = MMMM(
         eeg_encoder=eeg_enc,
@@ -78,6 +81,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
         image_encoder = None,
         dual_encoder = None,
         fusion_encoder = None,
+        emb_unet = emb_unet
         device = device,
         device_ids = device_ids,
         dtype = dtype

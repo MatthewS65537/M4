@@ -95,6 +95,10 @@ def train(args_dict, using_non_pytorch_parallel=False):
             target_pairwise_embeds = torch.mm(target_embeds_pooled, target_embeds_pooled.T)
             output = torch.mm(output, target_embeds_pooled.T)
 
+            # Normalize for Stable Softmax
+            target_pairwise_embeds = torch.div(torch.max(target_pairwise_embeds, dim=1).values.unsqueeze(1))
+            output = torch.div(torch.max(output, dim=1).values.unsqueeze(1))
+
             loss = symmetric_KL(output, target_pairwise_embeds)
             
             # Backward + Optimize only if in training phase

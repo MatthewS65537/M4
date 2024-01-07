@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class ClassificationHead(nn.Module):
-    def __init__(self, input_dim=512, output_dim=10, hidden_dim=1024, num_layers=2, device=None, dtype=torch.float32):
+    def __init__(self, input_dim=512, output_dim=10, hidden_dim=1024, num_layers=2, device=None, dtype=torch.float32, dropout=0.5):
         """
         Classification Neural Network model.
 
@@ -27,6 +27,7 @@ class ClassificationHead(nn.Module):
         if not device == None:
             self.to(device)
         self.to(dtype)
+        self.dropout = dropout
 
     def forward(self, x, temperature, staging_device="cuda:0"):
         """
@@ -40,6 +41,8 @@ class ClassificationHead(nn.Module):
             torch.Tensor: Class probabilities tensor of shape (batch_size, output_dim).
         """
         for layer in self.hidden_layers:
+            if not self.dropout == None:
+                x = nn.Dropout(p=self.dropout)
             x = self.activation(layer(x))
         x = self.softmax(self.output_layer(x)/temperature)  # Apply softmax activation
         return x
