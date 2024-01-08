@@ -13,10 +13,18 @@ def train(args_dict, using_non_pytorch_parallel=False):
     device = args_dict["device"] if "device" in args_dict else "cuda"
     device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
     staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
-    temperature = args_dict["temperature"] if "temperature" in args_dict else 20
+    temperature = args_dict["temperature"] if "temperature" in args_dict else 25
+
+    softmax_norm = lambda x : x # Dummy
+#     softmax_norm = lambda x : F.normalize(x, p=2, dim=1) # Doesn't work
+#     softmax_norm = lambda x : x - x.max(dim=1).values.unsqueeze(dim=1) # Meh
     symmetric_KL = lambda a, b, t=temperature: 0.5 * (criterion(F.log_softmax(a/t, dim=1), F.softmax(b/t, dim=1)) + criterion(F.log_softmax(b/t, dim=1), F.softmax(a/t, dim=1)))
+
     dev_bsz = args_dict["dev_bsz"] if "dev_bsz" in args_dict else 64
     bool_eval = args_dict["bool_eval"] if "bool_eval" in args_dict else False
+    use_unet = args_dict["use_unet"] if "use_unet" in args_dict else False
+    
+    flag = True
     
     if staging_device==None:
         staging_device = f"cuda:{device_ids[0]}" if device_ids == None else "cuda"
@@ -56,7 +64,8 @@ def train(args_dict, using_non_pytorch_parallel=False):
                 "input_masks_batch" : input_masks_batch.to(staging_device, dtype=torch.float32),
                 "input_masks_invert" : input_mask_invert_batch.to(staging_device, dtype=torch.float32),
                 "target_ids_batch" : target_ids_batch.to(staging_device),
-                "pool_result" : False
+                "pool_result" : False,
+                "use_unet" : use_unet
                 }
 
             output = model(
@@ -71,21 +80,28 @@ def train(args_dict, using_non_pytorch_parallel=False):
 
             output = torch.mean(output, dim=1).to(torch.float32)
             output = torch.mm(output, target_embeds_pooled.T)
-
-            # Normalize for Stable Softmax
-            target_pairwise_embeds = torch.div(torch.max(target_pairwise_embeds, dim=1).values.unsqueeze(1))
-            output = torch.div(torch.max(output, dim=1).values.unsqueeze(1))
             
-            loss = symmetric_KL(output, target_pairwise_embeds)
+#             print(target_pairwise_embeds.shape)
+#             print(output.shape)
+            
+            # Normalize for Stable Softmax
+            loss = symmetric_KL(softmax_norm(output), softmax_norm(target_pairwise_embeds))
+            
+#             print(F.softmax(softmax_norm(output)/temperature, dim=1)[:8,:8])
+#             print(F.softmax(softmax_norm(target_pairwise_embeds)/temperature,dim=1)[:8,:8])
+#             break
             
             # Backward + Optimize only if in training phase
             if phase == 'train':
                 if device_ids == None:
                     loss.backward()
-                    optimizer.step()
                 else:
                     loss.mean().backward()
-                    optimizer.step()
+#                 print(loss.item())
+#                 print("Max: ", torch.max(torch.stack([torch.max(torch.tensor([0.0]).to(device) if parameter.grad == None else parameter.grad) for name, parameter in model.named_parameters()])))
+                nn.utils.clip_grad_value_(model.parameters(), 10.0)
+#                 print("Normed Max:", torch.max(torch.stack([torch.max(torch.tensor([0.0]).to(device) if parameter.grad == None else parameter.grad) for name, parameter in model.named_parameters()])))
+                optimizer.step()
 
             # Compute stats
             if device_ids == None or len(device_ids) == 1:
@@ -94,9 +110,11 @@ def train(args_dict, using_non_pytorch_parallel=False):
                 running_loss += loss.mean().item() * input_embeddings_batch.size()[0]
             tot_cnt += input_embeddings_batch.size()[0]
             current_data = dataloader[phase].load_data()
-
+            
             for i in range(output.shape[0]):
                 current = torch.argmax(output[i])
+                if flag:
+                    buf.append(current)
                 if current == i:
                     correct += 1
                 tot += 1
@@ -107,6 +125,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
         
         if bool_eval:
             results[f"{phase}_accuracy"] = correct / tot
+            print(f"{correct}/{tot}")
     results["model"] = model
     return results
 

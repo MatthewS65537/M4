@@ -42,7 +42,7 @@ class ClassificationHead(nn.Module):
         """
         for layer in self.hidden_layers:
             if not self.dropout == None:
-                x = nn.Dropout(p=self.dropout)
+                x = nn.Dropout(p=self.dropout)(x)
             x = self.activation(layer(x))
         x = self.softmax(self.output_layer(x)/temperature)  # Apply softmax activation
         return x

@@ -34,6 +34,8 @@ import EEG_IMG_DIFFUSION
 import EEG_IMG_CLASSIFICATION
 import PRETRAIN_EEG_IMG_CLIP_MATCHING
 import PRETRAIN_EEG_TEXT_CLIP_MATCHING
+import PRETRAIN_EEG_IMG_UNET
+import PRETRAIN_EEG_TEXT_UNET
 
 if __name__ == "__main__":
     torch.set_default_dtype(torch.float32)
@@ -44,7 +46,7 @@ if __name__ == "__main__":
         "device" : "cuda",
         "device_ids" : [0,1,2,3],
         "staging_device" : "cuda",
-        "num_epochs" : 50,
+        "num_epochs" : 100,
         "use_non_pytorch_parallel" : False,
         "test_run" : False,
         "live_evaluate" : True,
@@ -78,9 +80,10 @@ if __name__ == "__main__":
     if test_run:
         for key, val in dataset_dict.items():
             dataset_dict[key]["train"] = dataset_dict[key]["dev"] # Make things faster
+            dataset_dict[key]["dev"] = dataset_dict[key]["test"] # Mimic an unseen set
             
-    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-pretrain2")
-    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-pretrain2")
+    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-pretrain-plus2")
+    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-pretrain-plus2")
             
     print(f"[INFO] PARAMETER COUNT")
     print(f"[INFO] >>>> {count_params(model)} TOTAL PARAMETERS.")
@@ -106,7 +109,7 @@ if __name__ == "__main__":
             dataset_tag="ZuCo-CLIP",
             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
             optimizer=optim.Adam,
-            learning_rate=2e-4,
+            learning_rate=1e-3,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -119,7 +122,33 @@ if __name__ == "__main__":
             dataset_tag="Brain2Image",
             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
             optimizer=optim.Adam,
-            learning_rate=2.5e-5,
+            learning_rate=1e-3,
+            converge_lim=2,
+            converge_threshold=0.005,
+            div_threshold=0.01
+            )
+        )
+    
+    dsg_tasks.add_task(
+        DSGTask(
+            task_name="PRETRAIN-EEG-TEXT-UNET",
+            dataset_tag="ZuCo-CLIP",
+            criterion=nn.CosineEmbeddingLoss(),
+            optimizer=optim.Adam,
+            learning_rate=1e-3,
+            converge_lim=2,
+            converge_threshold=0.005,
+            div_threshold=0.01
+            )
+        )
+    
+    dsg_tasks.add_task(
+        DSGTask(
+            task_name="PRETRAIN-EEG-IMG-UNET",
+            dataset_tag="Brain2Image",
+            criterion=nn.CosineEmbeddingLoss(),
+            optimizer=optim.Adam,
+            learning_rate=1e-3,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -129,70 +158,175 @@ if __name__ == "__main__":
     print(f"[INFO] FINISHED SETTING UP TRAINING TASKS.")
     
     lr_scale = 1.0
-    lr_scale_cnt = 0
     epoch = 0
+    num_epochs = 100
     print(f"[INFO] STARTING TRAINING.")
     while epoch < num_epochs:
         print(f"Epoch {epoch}")
+        if epoch < 10:
+            lr_scale = 1.0
+        elif epoch < 20:
+            lr_scale = 0.2
+        elif epoch < 25:
+            lr_scale = 0.04
+        elif epoch < 35:
+            lr_scale = 0.5
+        elif epoch < 45:
+            lr_scale = 0.1
+        elif epoch < 55:
+            lr_scale = 0.02
+        elif epoch < 65:
+            lr_scale = 0.25
+        elif epoch < 75:
+            lr_scale = 0.05
+        elif epoch < 85:
+            lr_scale = 0.01
+        elif epoch < 90:
+            lr_scale = 0.002
+        elif epoch < 95:
+            lr_scale = 0.0004
+        elif epoch < 100:
+            lr_scale = 0.0001
+            
+        
         epc_start = time.time()
         for task in dsg_tasks.tasks:
             start = time.time()
             if task.name == "PRETRAIN-EEG-TEXT-CLIP-MATCHING":
+                for name, param in model.named_parameters():
+                    if "eeg_encoder" in name:
+                        param.requires_grad = True
+                    if "emb_unet" in name:
+                        param.requires_grad = epoch >= 75
                 args_dict = {
                     "model" : model,
                     "dataloader" : dataset_dict[task.dataset_tag],
-                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate),
+                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate * lr_scale),
                     "tokenizer" : BART_tokenizer,
                     "criterion" : task.criterion,
                     "device" : device,
                     "device_ids" : device_ids,
                     "staging_device" : staging_device,
+                    "use_unet" : epoch >= 75,
                     "dev_bsz" : 256,
-                    "bool_eval" : True if live_evaluate and epoch % eval_interval == 0 else False,
-                    "temperature" : 20
+                    "bool_eval" : True,
+                    "temperature" : 25,
                 }
                 results = PRETRAIN_EEG_TEXT_CLIP_MATCHING.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
                 model = results["model"]
+                if "train_accuracy" in results:
+                    if epoch % eval_interval == 0 and live_evaluate:
+                        print(f">>>>>>>> TRAIN ACCURACY: {results['train_accuracy'] * 100 : 8.4f} % DEV ACCURACY: {results['dev_accuracy'] * 100 : 8.4f} %")
+                        train_writer.add_scalar(f"{task.name} Accuracy", results['train_accuracy'] * 100, epoch)
+                        dev_writer.add_scalar(f"{task.name} Accuracy", results['dev_accuracy'] * 100, epoch)
+
                 print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
                 train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
                 dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
-                task.update()
                 
-                if epoch % eval_interval == 0 and live_evaluate:
-                    print(f">>>>>>>> TRAIN ACCURACY: {results['train_accuracy'] * 100 : 8.4f} % DEV ACCURACY: {results['dev_accuracy'] * 100 : 8.4f} %")
-                    train_writer.add_scalar(f"{task.name} Accuracy", results['train_accuracy'] * 100, epoch)
-                    dev_writer.add_scalar(f"{task.name} Accuracy", results['dev_accuracy'] * 100, epoch)
-                    
-
             elif task.name == "PRETRAIN-EEG-IMG-CLIP-MATCHING":
+                for name, param in model.named_parameters():
+                    if "eeg_encoder" in name:
+                        param.requires_grad = True
+                    if "emb_unet" in name:
+                        param.requires_grad = epoch >= 75
                 args_dict = {
                     "model" : model,
                     "dataloader" : dataset_dict[task.dataset_tag],
-                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate),
+                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate * lr_scale),
+                    "criterion" : task.criterion,
+                    "device" : device,
+                    "device_ids" : device_ids,
+                    "staging_device" : staging_device,
+                    "use_unet" : epoch >= 75,
+                    "bsz" : 256,
+                    "bool_eval" : True,
+                    "temperature" : 20,
+                }
+                results = PRETRAIN_EEG_IMG_CLIP_MATCHING.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
+                model = results["model"]
+                if "train_accuracy" in results:
+                    if epoch % eval_interval == 0 and live_evaluate:
+                        print(f">>>>>>>> TRAIN ACCURACY: {results['train_accuracy'] * 100 : 8.4f} % DEV ACCURACY: {results['dev_accuracy'] * 100 : 8.4f} %")
+                        train_writer.add_scalar(f"{task.name} Accuracy", results['train_accuracy'] * 100, epoch)
+                        dev_writer.add_scalar(f"{task.name} Accuracy", results['dev_accuracy'] * 100, epoch)
+
+                print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
+                train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
+                dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
+                model = results["model"]  
+                
+            elif task.name == "PRETRAIN-EEG-TEXT-UNET":
+                if epoch < 25:
+                    continue
+                elif epoch < 75:
+                    lr_scale *= 2
+                    for name, param in model.named_parameters():
+                        if "eeg_encoder" in name:
+                            param.requires_grad = False
+                        if "emb_unet" in name:
+                            param.requires_grad = True
+                args_dict = {
+                    "model" : model,
+                    "dataloader" : dataset_dict[task.dataset_tag],
+                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate * lr_scale),
+                    "tokenizer" : BART_tokenizer,
                     "criterion" : task.criterion,
                     "device" : device,
                     "device_ids" : device_ids,
                     "staging_device" : staging_device,
                     "bsz" : 256,
-                    "bool_eval" : True,
-                    "temperature" : 20
                 }
-                results = PRETRAIN_EEG_IMG_CLIP_MATCHING.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
-#                 print([key for key, val in results.items()])
+                results = PRETRAIN_EEG_TEXT_UNET.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
                 model = results["model"]
+                if "train_accuracy" in results:
+                    if epoch % eval_interval == 0 and live_evaluate:
+                        print(f">>>>>>>> TRAIN ACCURACY: {results['train_accuracy'] * 100 : 8.4f} % DEV ACCURACY: {results['dev_accuracy'] * 100 : 8.4f} %")
+                        train_writer.add_scalar(f"{task.name} Accuracy", results['train_accuracy'] * 100, epoch)
+                        dev_writer.add_scalar(f"{task.name} Accuracy", results['dev_accuracy'] * 100, epoch)
+
                 print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
                 train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
                 dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
-                if epoch % eval_interval == 0 and live_evaluate:
-                    print(f">>>>>>>> TRAIN ACCURACY: {results['train_accuracy'] * 100 : 8.4f} % DEV ACCURACY: {results['dev_accuracy'] * 100 : 8.4f} %")
-                    train_writer.add_scalar(f"{task.name} Accuracy", results['train_accuracy'] * 100, epoch)
-                    dev_writer.add_scalar(f"{task.name} Accuracy", results['dev_accuracy'] * 100, epoch)
+            elif task.name == "PRETRAIN-EEG-IMG-UNET":
+                if epoch < 25:
+                    continue
+                elif epoch < 75:
+                    lr_scale *= 2
+                    for name, param in model.named_parameters():
+                        if "eeg_encoder" in name:
+                            param.requires_grad = False
+                        if "emb_unet" in name:
+                            param.requires_grad = True
+                args_dict = {
+                    "model" : model,
+                    "dataloader" : dataset_dict[task.dataset_tag],
+                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate * lr_scale),
+                    "criterion" : task.criterion,
+                    "device" : device,
+                    "device_ids" : device_ids,
+                    "staging_device" : staging_device,
+                    "bsz" : 256,
+                }
+                results = PRETRAIN_EEG_IMG_UNET.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
+                model = results["model"]
+                if "train_accuracy" in results:
+                    if epoch % eval_interval == 0 and live_evaluate:
+                        print(f">>>>>>>> TRAIN ACCURACY: {results['train_accuracy'] * 100 : 8.4f} % DEV ACCURACY: {results['dev_accuracy'] * 100 : 8.4f} %")
+                        train_writer.add_scalar(f"{task.name} Accuracy", results['train_accuracy'] * 100, epoch)
+                        dev_writer.add_scalar(f"{task.name} Accuracy", results['dev_accuracy'] * 100, epoch)
+
+                print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
+                train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
+                dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
+                model = results["model"]                
             else:
                 print(f"[WARNING] Task {task.name} not found. Skipping.")
-            try:
-                del results
-            except:
-                pass
+                continue
+                
+#             del results
+#             torch.cuda.empty_cache()
+            
         print(f"TOT TIME: {time.time() - epc_start:.2f} SECONDS")
         if epoch % 10 == 0:
             torch.save(model.state_dict(), f"./checkpoints/PretrainPlus/MMMM_{epoch}.pt")

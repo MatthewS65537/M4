@@ -67,7 +67,7 @@ class EEGEncoder(nn.Module):
             encoded_embedding = self.encoder(encoded_embedding, src_key_padding_mask=input_masks_invert)
             if debug:
                 print("ENCODER ENCODER GOOD")
-            encoded_embedding = F.relu(self.fc_proj(encoded_embedding))
+            encoded_embedding = F.leaky_relu(self.fc_proj(encoded_embedding), negative_slope=0.25)
             if debug:
                 print("ENCODER FC GOOD")
             pool_result = args_dict["pool_result"]
@@ -80,7 +80,7 @@ class EEGEncoder(nn.Module):
             input_masks_invert = args_dict["input_masks_invert"]
             encoded_embedding = self.heads[mode](input_data_batch)
             encoded_embedding = self.encoder(encoded_embedding, src_key_padding_mask=input_masks_invert)
-            encoded_embedding = F.relu(self.fc_proj(encoded_embedding))
+            encoded_embedding = F.leaky_relu(self.fc_proj(encoded_embedding), negative_slope=0.25)
             pool_result = args_dict["pool_result"]
             if pool_result:
                 encoded_embedding = torch.mean(encoded_embedding, dim=1)

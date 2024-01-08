@@ -13,6 +13,8 @@ from diffusers import UNet2DConditionModel, LMSDiscreteScheduler
 from load_data import *
 from dataloader import *
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
     """
@@ -49,7 +51,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             hidden_dim=1024,
             num_layers=1,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=None,
+            activation=nn.LeakyReLU(negative_slope=0.25)
             )
         )
 
@@ -61,7 +65,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             hidden_dim=1024,
             num_layers=1,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=None,
+            activation=nn.LeakyReLU(negative_slope=0.25)
             )
         )
     
@@ -81,7 +87,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
         image_encoder = None,
         dual_encoder = None,
         fusion_encoder = None,
-        emb_unet = emb_unet
+        emb_unet = emb_unet,
         device = device,
         device_ids = device_ids,
         dtype = dtype
@@ -129,7 +135,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
     
     for name, param in BART_branch.named_parameters():
         if param.requires_grad and 'body' in name:
-            if ('shared' in name) or ('embed_positions' in name) or ('encoder.layers.0' in name):
+            if ('shared' in name) or ('embed_positions' in name) or ('encoder.layers.0' in name) or ('encoder.layers.1' in name):
                 continue
             else:
                 param.requires_grad = False
@@ -268,7 +274,8 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             output_dim=768,
             num_layers=4,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=0.5
         )
     )
     print("LOADED EEG-TEXT-SENTIMENT")
