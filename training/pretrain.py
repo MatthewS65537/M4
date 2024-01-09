@@ -72,7 +72,7 @@ if __name__ == "__main__":
         model = DataParallelModel(model, device_ids=device_ids).to(device)
     else:
         model = nn.DataParallel(model, device_ids=device_ids).to(device)
-    print(model)
+    
     dataset_dict = INITIALIZE_DATALOADERS(
         keys=["ZuCo-BART", "ZuCo-CLIP", "Brain2Image"],
         bsz=[256, 256, 1],
@@ -83,8 +83,8 @@ if __name__ == "__main__":
             dataset_dict[key]["train"] = dataset_dict[key]["dev"] # Make things faster
             dataset_dict[key]["dev"] = dataset_dict[key]["test"] # Mimic an unseen set
             
-    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-pretrain-plus-final")
-    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-pretrain-plus-final")
+    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-final-pretrain-plus")
+    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-final-pretrain-plus")
             
     print(f"[INFO] PARAMETER COUNT")
     print(f"[INFO] >>>> {count_params(model)} TOTAL PARAMETERS.")
@@ -110,7 +110,7 @@ if __name__ == "__main__":
             dataset_tag="ZuCo-CLIP",
             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
             optimizer=optim.AdamW,
-            learning_rate=2e-5,
+            learning_rate=5e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -123,7 +123,7 @@ if __name__ == "__main__":
             dataset_tag="Brain2Image",
             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
             optimizer=optim.AdamW,
-            learning_rate=2e-5,
+            learning_rate=3e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -136,7 +136,7 @@ if __name__ == "__main__":
             dataset_tag="ZuCo-CLIP",
             criterion=nn.CosineEmbeddingLoss(),
             optimizer=optim.AdamW,
-            learning_rate=4e-5,
+            learning_rate=5e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -149,7 +149,7 @@ if __name__ == "__main__":
             dataset_tag="Brain2Image",
             criterion=nn.CosineEmbeddingLoss(),
             optimizer=optim.AdamW,
-            learning_rate=4e-5,
+            learning_rate=3e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -166,28 +166,28 @@ if __name__ == "__main__":
         print(f"Epoch {epoch}")
         if epoch < 10:
             lr_scale = 0.2 + epoch * 0.08
-        elif epoch < 20:
+        elif epoch < 15:
             lr_scale = 1.0
         elif epoch < 25:
-            lr_scale = 0.8
+            lr_scale = 0.2
         elif epoch < 35:
-            lr_scale = 0.6
-        elif epoch < 45:
-            lr_scale = 0.9
-        elif epoch < 55:
-            lr_scale = 0.75
+            lr_scale = 0.04
+        elif epoch < 40:
+            lr_scale = 0.8
+        elif epoch < 50:
+            lr_scale = 0.16
         elif epoch < 65:
-            lr_scale = 0.6
+            lr_scale = 0.03
         elif epoch < 75:
-            lr_scale = 0.75
+            lr_scale = 0.6
         elif epoch < 85:
-            lr_scale = 0.625
+            lr_scale = 0.12
         elif epoch < 90:
-            lr_scale = 0.5
+            lr_scale = 0.02
         elif epoch < 95:
-            lr_scale = 0.325
+            lr_scale = 0.06
         elif epoch < 100:
-            lr_scale = 0.25
+            lr_scale = 0.01
             
         
         epc_start = time.time()
