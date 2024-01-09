@@ -85,7 +85,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
 #             print(output.shape)
             
             # Normalize for Stable Softmax
-            loss = symmetric_KL(softmax_norm(output), softmax_norm(target_pairwise_embeds))
+            loss = symmetric_KL(output, target_pairwise_embeds)
             
 #             print(F.softmax(softmax_norm(output)/temperature, dim=1)[:8,:8])
 #             print(F.softmax(softmax_norm(target_pairwise_embeds)/temperature,dim=1)[:8,:8])
@@ -95,13 +95,15 @@ def train(args_dict, using_non_pytorch_parallel=False):
             if phase == 'train':
                 if device_ids == None:
                     loss.backward()
+#                 nn.utils.clip_grad_value_(model.parameters(), 10.0)
+                    optimizer.step()
                 else:
                     loss.mean().backward()
+#                 nn.utils.clip_grad_value_(model.parameters(), 10.0)
+                    optimizer.step()
 #                 print(loss.item())
 #                 print("Max: ", torch.max(torch.stack([torch.max(torch.tensor([0.0]).to(device) if parameter.grad == None else parameter.grad) for name, parameter in model.named_parameters()])))
-                nn.utils.clip_grad_value_(model.parameters(), 10.0)
 #                 print("Normed Max:", torch.max(torch.stack([torch.max(torch.tensor([0.0]).to(device) if parameter.grad == None else parameter.grad) for name, parameter in model.named_parameters()])))
-                optimizer.step()
 
             # Compute stats
             if device_ids == None or len(device_ids) == 1:
@@ -123,7 +125,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
         
         if bool_eval:
             results[f"{phase}_accuracy"] = correct / tot
-            print(f"{correct}/{tot}")
+            print(f"{phase}: {correct}/{tot}")
     results["model"] = model
     return results
 

@@ -48,7 +48,7 @@ if __name__ == "__main__":
         "staging_device" : "cuda",
         "num_epochs" : 100,
         "use_non_pytorch_parallel" : False,
-        "test_run" : False,
+        "test_run" : True,
         "live_evaluate" : True,
         "eval_interval" : 1,
         "log_dir" : "./logs"
@@ -72,6 +72,7 @@ if __name__ == "__main__":
         model = DataParallelModel(model, device_ids=device_ids).to(device)
     else:
         model = nn.DataParallel(model, device_ids=device_ids).to(device)
+    print(model)
     dataset_dict = INITIALIZE_DATALOADERS(
         keys=["ZuCo-BART", "ZuCo-CLIP", "Brain2Image"],
         bsz=[256, 256, 1],
@@ -82,8 +83,8 @@ if __name__ == "__main__":
             dataset_dict[key]["train"] = dataset_dict[key]["dev"] # Make things faster
             dataset_dict[key]["dev"] = dataset_dict[key]["test"] # Mimic an unseen set
             
-    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-pretrain-plus2")
-    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-pretrain-plus2")
+    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-pretrain-plus-testrun")
+    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-pretrain-plus-testrun")
             
     print(f"[INFO] PARAMETER COUNT")
     print(f"[INFO] >>>> {count_params(model)} TOTAL PARAMETERS.")
@@ -108,8 +109,8 @@ if __name__ == "__main__":
             task_name="PRETRAIN-EEG-TEXT-CLIP-MATCHING",
             dataset_tag="ZuCo-CLIP",
             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
-            optimizer=optim.Adam,
-            learning_rate=2.5e-3,
+            optimizer=optim.AdamW,
+            learning_rate=2e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -121,8 +122,8 @@ if __name__ == "__main__":
             task_name="PRETRAIN-EEG-IMG-CLIP-MATCHING",
             dataset_tag="Brain2Image",
             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
-            optimizer=optim.Adam,
-            learning_rate=2.5e-3,
+            optimizer=optim.AdamW,
+            learning_rate=3e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -134,8 +135,8 @@ if __name__ == "__main__":
             task_name="PRETRAIN-EEG-TEXT-UNET",
             dataset_tag="ZuCo-CLIP",
             criterion=nn.CosineEmbeddingLoss(),
-            optimizer=optim.Adam,
-            learning_rate=2.5e-3,
+            optimizer=optim.AdamW,
+            learning_rate=4e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -147,8 +148,8 @@ if __name__ == "__main__":
             task_name="PRETRAIN-EEG-IMG-UNET",
             dataset_tag="Brain2Image",
             criterion=nn.CosineEmbeddingLoss(),
-            optimizer=optim.Adam,
-            learning_rate=2.5e-3,
+            optimizer=optim.AdamW,
+            learning_rate=6e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -164,29 +165,29 @@ if __name__ == "__main__":
     while epoch < num_epochs:
         print(f"Epoch {epoch}")
         if epoch < 10:
-            lr_scale = 1.0
+            lr_scale = 0.1 + epoch * 0.09
         elif epoch < 20:
-            lr_scale = 0.2
+            lr_scale = 1.0
         elif epoch < 25:
-            lr_scale = 0.04
+            lr_scale = 0.7
         elif epoch < 35:
-            lr_scale = 0.5
+            lr_scale = 0.4
         elif epoch < 45:
-            lr_scale = 0.1
+            lr_scale = 0.8
         elif epoch < 55:
-            lr_scale = 0.02
+            lr_scale = 0.5
         elif epoch < 65:
-            lr_scale = 0.25
+            lr_scale = 0.2
         elif epoch < 75:
-            lr_scale = 0.05
+            lr_scale = 0.3
         elif epoch < 85:
-            lr_scale = 0.01
+            lr_scale = 0.15
         elif epoch < 90:
-            lr_scale = 0.002
+            lr_scale = 0.1
         elif epoch < 95:
-            lr_scale = 0.0004
+            lr_scale = 0.05
         elif epoch < 100:
-            lr_scale = 0.0001
+            lr_scale = 0.01
             
         
         epc_start = time.time()
@@ -257,10 +258,9 @@ if __name__ == "__main__":
                 model = results["model"]  
                 
             elif task.name == "PRETRAIN-EEG-TEXT-UNET":
-                if epoch < 25:
+                if epoch < 50:
                     continue
                 elif epoch < 75:
-                    lr_scale *= 2
                     for name, param in model.named_parameters():
                         if "eeg_encoder" in name:
                             param.requires_grad = False
@@ -289,10 +289,9 @@ if __name__ == "__main__":
                 train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
                 dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
             elif task.name == "PRETRAIN-EEG-IMG-UNET":
-                if epoch < 25:
+                if epoch < 50:
                     continue
                 elif epoch < 75:
-                    lr_scale *= 2
                     for name, param in model.named_parameters():
                         if "eeg_encoder" in name:
                             param.requires_grad = False

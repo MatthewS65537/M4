@@ -53,7 +53,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             device=device,
             dtype=dtype,
             dropout=0.1,
-            activation=nn.LeakyReLU(negative_slope=0.25)
+            activation=nn.GELU('tanh')
             )
         )
 
@@ -67,7 +67,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             device=device,
             dtype=dtype,
             dropout=0.1,
-            activation=nn.LeakyReLU(negative_slope=0.25)
+            activation=nn.GELU('tanh')
             )
         )
     
