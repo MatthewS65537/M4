@@ -9,9 +9,9 @@ def train(args_dict, using_non_pytorch_parallel=False):
     model = args_dict["model"]
     optimizer = args_dict["optimizer"]
     criterion = args_dict["criterion"]
-    softmax_norm = lambda x : x # Dummy
+#     softmax_norm = lambda x : x # Dummy
 #     softmax_norm = lambda x : F.normalize(x, p=2, dim=1) # Doesn't work
-#     softmax_norm = lambda x : x - x.max(dim=1).values.unsqueeze(dim=1)
+    softmax_norm = lambda x : x - x.max(dim=1).values.unsqueeze(dim=1)
 
     temperature = args_dict["temperature"] if "temperature" in args_dict else 25
     symmetric_KL = lambda a, b, t=temperature: 0.5 * (criterion(F.log_softmax(a/t, dim=1), F.softmax(b/t, dim=1)) + criterion(F.log_softmax(b/t, dim=1), F.softmax(a/t, dim=1)))

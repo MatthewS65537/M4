@@ -109,7 +109,7 @@ if __name__ == "__main__":
             dataset_tag="ZuCo-CLIP",
             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
             optimizer=optim.Adam,
-            learning_rate=1e-3,
+            learning_rate=2.5e-3,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -122,7 +122,7 @@ if __name__ == "__main__":
             dataset_tag="Brain2Image",
             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
             optimizer=optim.Adam,
-            learning_rate=1e-3,
+            learning_rate=2.5e-3,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -135,7 +135,7 @@ if __name__ == "__main__":
             dataset_tag="ZuCo-CLIP",
             criterion=nn.CosineEmbeddingLoss(),
             optimizer=optim.Adam,
-            learning_rate=1e-3,
+            learning_rate=2.5e-3,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -148,7 +148,7 @@ if __name__ == "__main__":
             dataset_tag="Brain2Image",
             criterion=nn.CosineEmbeddingLoss(),
             optimizer=optim.Adam,
-            learning_rate=1e-3,
+            learning_rate=2.5e-3,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01

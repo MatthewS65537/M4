@@ -28,7 +28,7 @@ class FCN(nn.Module):
             self.to(device)
         self.dtype = dtype
         self.to(dtype=dtype)
-        self.dropout = dropout
+        self.dropout = None if dropout == None else nn.Dropout(p=dropout)
 
     def forward(self, x, staging_device="cuda:0"):
         """
@@ -43,7 +43,7 @@ class FCN(nn.Module):
         """
         for layer in self.hidden_layers:
             if not self.dropout == None:
-                x = nn.Dropout(p=self.dropout)(x)
+                x = self.dropout(x)
             x = layer(x)
             if not self.activation == None:
                 x = self.activation(x)
