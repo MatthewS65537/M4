@@ -42,12 +42,12 @@ class MMMM(nn.Module):
         CLIP_text_encoder,
         image_encoder,
         fusion_encoder,
+        emb_unet,
         meta_head=FCN(
             input_dim=768,
             output_dim=768,
             num_layers=4,
         ),
-        emb_unet=None,
         device=None,
         device_ids=None,
         dtype=torch.float32
@@ -60,7 +60,7 @@ class MMMM(nn.Module):
         self.eeg_encoder = eeg_encoder.to(dtype=dtype)
         self.dual_encoder = None if dual_encoder == None else dual_encoder.to(dtype=dtype)
         self.fusion_encoder = None if fusion_encoder == None else fusion_encoder.to(dtype=dtype)
-        self.emb_unet = None if emb_unet == None else fusion_encoder.to(dtype=dtype)
+        self.emb_unet = None if emb_unet == None else emb_unet.to(dtype=dtype)
         self.branches = nn.ModuleDict()
         self.meta_head = meta_head.to(dtype=dtype)
         self.heads = nn.ModuleDict()
@@ -110,14 +110,15 @@ class MMMM(nn.Module):
             encoded_embedding = self.eeg_encoder("EEG-TEXT-BART", args_dict, staging_device, debug)
             use_unet = args_dict["use_unet"] if "use_unet" in args_dict else False
             if use_unet:
-                encoded_embedding = self.meta_head(encoded_embedding)
-            encoded_embedding = self.emb_unet(encoded_embedding.reshape(encoded_embedding.shape[0], encoded_embedding.shape[2], encoded_embedding.shape[1]))
+                encoded_embedding = self.emb_unet(encoded_embedding.reshape(encoded_embedding.shape[0], encoded_embedding.shape[2], encoded_embedding.shape[1]))
+                encoded_embedding = encoded_embedding.reshape(encoded_embedding.shape[0], encoded_embedding.shape[2], encoded_embedding.shape[1])
             return encoded_embedding
         elif mode == "PRETRAIN-EEG-IMG-CLIP-MATCHING":
             encoded_embedding = self.eeg_encoder("EEG-IMG-BRAIN2IMAGE", args_dict, staging_device, debug)
+            use_unet = args_dict["use_unet"] if "use_unet" in args_dict else False
             if use_unet:
-                encoded_embedding = self.emb_unet(encoded_embedding.reshape(encoded_embedding.shape[0], encoded_embedding.shape[2], encoded_embedding.shape[1]))
-            encoded_embedding = encoded_embedding.reshape(encoded_embedding.shape[0], encoded_embedding.shape[2], encoded_embedding.shape[1])
+                encoded_embedding = self.emb_unet(encoded_embedding.reshape(encoded_embedding.shape[0], encoded_embedding.shape[1], 1))
+                encoded_embedding = encoded_embedding.reshape(encoded_embedding.shape[0], encoded_embedding.shape[2], encoded_embedding.shape[1])
             return encoded_embedding
         elif mode == "EEG-TEXT-BART":
             encoded_embedding = self.eeg_encoder(mode, args_dict, staging_device, debug)

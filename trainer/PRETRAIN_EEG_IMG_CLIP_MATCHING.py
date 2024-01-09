@@ -9,13 +9,18 @@ def train(args_dict, using_non_pytorch_parallel=False):
     model = args_dict["model"]
     optimizer = args_dict["optimizer"]
     criterion = args_dict["criterion"]
-    symmetric_KL = lambda a, b : 0.5 * (criterion(F.log_softmax(a, dim=1), F.softmax(b, dim=1)) + criterion(F.log_softmax(b, dim=1), F.softmax(a, dim=1)))
+#     softmax_norm = lambda x : x # Dummy
+#     softmax_norm = lambda x : F.normalize(x, p=2, dim=1) # Doesn't work
+    softmax_norm = lambda x : x - x.max(dim=1).values.unsqueeze(dim=1)
+
+    temperature = args_dict["temperature"] if "temperature" in args_dict else 25
+    symmetric_KL = lambda a, b, t=temperature: 0.5 * (criterion(F.log_softmax(a/t, dim=1), F.softmax(b/t, dim=1)) + criterion(F.log_softmax(b/t, dim=1), F.softmax(a/t, dim=1)))
     device = args_dict["device"] if "device" in args_dict else "cuda"
     device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
     staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
     bsz = args_dict["bsz"] if "bsz" in args_dict else 64
     bool_eval = args_dict["bool_eval"] if "bool_eval" in args_dict else False
-    temperature = args_dict["temperature"] if "temperature" in args_dict else 0.07
+    use_unet = args_dict["use_unet"] if "use_unet" in args_dict else False
 
     if staging_device==None:
         staging_device = f"cuda:{device_ids[0]}" if device_ids == None else "cuda"
@@ -57,7 +62,8 @@ def train(args_dict, using_non_pytorch_parallel=False):
                 "input_data_batch" : eeg_batch,
                 "input_masks_batch" : masks_batch,
                 "input_masks_invert" : invert_masks_batch,
-                "pool_result" : True
+                "pool_result" : True,
+                "use_unet" : use_unet
             }
             
             optimizer.zero_grad()
@@ -94,21 +100,25 @@ def train(args_dict, using_non_pytorch_parallel=False):
             target_embeds_pooled = target_embed
             target_pairwise_embeds = torch.mm(target_embeds_pooled, target_embeds_pooled.T)
             output = torch.mm(output, target_embeds_pooled.T)
-
+            
             # Normalize for Stable Softmax
-            target_pairwise_embeds = torch.div(torch.max(target_pairwise_embeds, dim=1).values.unsqueeze(1))
-            output = torch.div(torch.max(output, dim=1).values.unsqueeze(1))
-
-            loss = symmetric_KL(output, target_pairwise_embeds)
+            loss = symmetric_KL(softmax_norm(output), softmax_norm(target_pairwise_embeds))
+            
+#             print(F.softmax(softmax_norm(output)/temperature)[:8,:8])
+#             print(F.softmax(softmax_norm(target_pairwise_embeds)/temperature)[:8,:8])
+#             break
             
             # Backward + Optimize only if in training phase
             if phase == 'train':
                 if device_ids == None:
                     loss.backward()
-                    optimizer.step()
                 else:
                     loss.mean().backward()
-                    optimizer.step()
+#                 print(loss.item())
+#                 print("Max: ", torch.max(torch.stack([torch.max(torch.tensor([0.0]).to(device) if parameter.grad == None else parameter.grad) for name, parameter in model.named_parameters()])))
+                nn.utils.clip_grad_value_(model.parameters(), 10.0)
+#                 print("Normed Max:", torch.max(torch.stack([torch.max(torch.tensor([0.0]).to(device) if parameter.grad == None else parameter.grad) for name, parameter in model.named_parameters()])))
+                optimizer.step()
 
             # Compute stats
             if device_ids == None or len(device_ids) == 1:
