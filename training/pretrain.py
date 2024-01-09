@@ -48,7 +48,7 @@ if __name__ == "__main__":
         "staging_device" : "cuda",
         "num_epochs" : 100,
         "use_non_pytorch_parallel" : False,
-        "test_run" : True,
+        "test_run" : False,
         "live_evaluate" : True,
         "eval_interval" : 1,
         "log_dir" : "./logs"
@@ -83,8 +83,8 @@ if __name__ == "__main__":
             dataset_dict[key]["train"] = dataset_dict[key]["dev"] # Make things faster
             dataset_dict[key]["dev"] = dataset_dict[key]["test"] # Mimic an unseen set
             
-    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-pretrain-plus-testrun")
-    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-pretrain-plus-testrun")
+    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-pretrain-plus-final")
+    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-pretrain-plus-final")
             
     print(f"[INFO] PARAMETER COUNT")
     print(f"[INFO] >>>> {count_params(model)} TOTAL PARAMETERS.")
@@ -123,7 +123,7 @@ if __name__ == "__main__":
             dataset_tag="Brain2Image",
             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
             optimizer=optim.AdamW,
-            learning_rate=3e-5,
+            learning_rate=2e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -149,7 +149,7 @@ if __name__ == "__main__":
             dataset_tag="Brain2Image",
             criterion=nn.CosineEmbeddingLoss(),
             optimizer=optim.AdamW,
-            learning_rate=6e-5,
+            learning_rate=4e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -165,29 +165,29 @@ if __name__ == "__main__":
     while epoch < num_epochs:
         print(f"Epoch {epoch}")
         if epoch < 10:
-            lr_scale = 0.1 + epoch * 0.09
+            lr_scale = 0.2 + epoch * 0.08
         elif epoch < 20:
             lr_scale = 1.0
         elif epoch < 25:
-            lr_scale = 0.7
-        elif epoch < 35:
-            lr_scale = 0.4
-        elif epoch < 45:
             lr_scale = 0.8
+        elif epoch < 35:
+            lr_scale = 0.6
+        elif epoch < 45:
+            lr_scale = 0.9
         elif epoch < 55:
-            lr_scale = 0.5
+            lr_scale = 0.75
         elif epoch < 65:
-            lr_scale = 0.2
+            lr_scale = 0.6
         elif epoch < 75:
-            lr_scale = 0.3
+            lr_scale = 0.75
         elif epoch < 85:
-            lr_scale = 0.15
+            lr_scale = 0.625
         elif epoch < 90:
-            lr_scale = 0.1
+            lr_scale = 0.5
         elif epoch < 95:
-            lr_scale = 0.05
+            lr_scale = 0.325
         elif epoch < 100:
-            lr_scale = 0.01
+            lr_scale = 0.25
             
         
         epc_start = time.time()
