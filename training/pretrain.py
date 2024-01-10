@@ -130,36 +130,37 @@ if __name__ == "__main__":
             )
         )
     
-    dsg_tasks.add_task(
-        DSGTask(
-            task_name="PRETRAIN-EEG-TEXT-UNET",
-            dataset_tag="ZuCo-CLIP",
-            criterion=nn.CosineEmbeddingLoss(),
-            optimizer=optim.AdamW,
-            learning_rate=5e-5,
-            converge_lim=2,
-            converge_threshold=0.005,
-            div_threshold=0.01
-            )
-        )
+#     dsg_tasks.add_task(
+#         DSGTask(
+#             task_name="PRETRAIN-EEG-TEXT-UNET",
+#             dataset_tag="ZuCo-CLIP",
+#             criterion=nn.CosineEmbeddingLoss(),
+#             optimizer=optim.AdamW,
+#             learning_rate=5e-5,
+#             converge_lim=2,
+#             converge_threshold=0.005,
+#             div_threshold=0.01
+#             )
+#         )
     
-    dsg_tasks.add_task(
-        DSGTask(
-            task_name="PRETRAIN-EEG-IMG-UNET",
-            dataset_tag="Brain2Image",
-            criterion=nn.CosineEmbeddingLoss(),
-            optimizer=optim.AdamW,
-            learning_rate=3e-5,
-            converge_lim=2,
-            converge_threshold=0.005,
-            div_threshold=0.01
-            )
-        )
+#     dsg_tasks.add_task(
+#         DSGTask(
+#             task_name="PRETRAIN-EEG-IMG-UNET",
+#             dataset_tag="Brain2Image",
+#             criterion=nn.CosineEmbeddingLoss(),
+#             optimizer=optim.AdamW,
+#             learning_rate=3e-5,
+#             converge_lim=2,
+#             converge_threshold=0.005,
+#             div_threshold=0.01
+#             )
+#         )
     
     print(f"[INFO] FINISHED SETTING UP TRAINING TASKS.")
     
     lr_scale = 1.0
-    epoch = 0
+    epoch = 71
+    model.load_state_dict(torch.load("./checkpoints/PretrainPlus/MMMM_70.pt"))
     num_epochs = 100
     print(f"[INFO] STARTING TRAINING.")
     while epoch < num_epochs:
@@ -198,7 +199,7 @@ if __name__ == "__main__":
                     if "eeg_encoder" in name:
                         param.requires_grad = True
                     if "emb_unet" in name:
-                        param.requires_grad = epoch >= 75
+                        param.requires_grad = False
                 args_dict = {
                     "model" : model,
                     "dataloader" : dataset_dict[task.dataset_tag],
@@ -208,7 +209,7 @@ if __name__ == "__main__":
                     "device" : device,
                     "device_ids" : device_ids,
                     "staging_device" : staging_device,
-                    "use_unet" : epoch >= 75,
+                    "use_unet" : False,
                     "dev_bsz" : 256,
                     "bool_eval" : True,
                     "temperature" : 25,
@@ -239,7 +240,7 @@ if __name__ == "__main__":
                     "device" : device,
                     "device_ids" : device_ids,
                     "staging_device" : staging_device,
-                    "use_unet" : epoch >= 75,
+                    "use_unet" : False,
                     "bsz" : 256,
                     "bool_eval" : True,
                     "temperature" : 20,
@@ -257,46 +258,46 @@ if __name__ == "__main__":
                 dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
                 model = results["model"]  
                 
-            elif task.name == "PRETRAIN-EEG-TEXT-UNET":
-                if epoch < 50:
-                    continue
-                elif epoch < 75:
-                    for name, param in model.named_parameters():
-                        if "eeg_encoder" in name:
-                            param.requires_grad = False
-                        if "emb_unet" in name:
-                            param.requires_grad = True
-                args_dict = {
-                    "model" : model,
-                    "dataloader" : dataset_dict[task.dataset_tag],
-                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate * lr_scale),
-                    "tokenizer" : BART_tokenizer,
-                    "criterion" : task.criterion,
-                    "device" : device,
-                    "device_ids" : device_ids,
-                    "staging_device" : staging_device,
-                    "bsz" : 256,
-                }
-                results = PRETRAIN_EEG_TEXT_UNET.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
-                model = results["model"]
-                if "train_accuracy" in results:
-                    if epoch % eval_interval == 0 and live_evaluate:
-                        print(f">>>>>>>> TRAIN ACCURACY: {results['train_accuracy'] * 100 : 8.4f} % DEV ACCURACY: {results['dev_accuracy'] * 100 : 8.4f} %")
-                        train_writer.add_scalar(f"{task.name} Accuracy", results['train_accuracy'] * 100, epoch)
-                        dev_writer.add_scalar(f"{task.name} Accuracy", results['dev_accuracy'] * 100, epoch)
+#             elif task.name == "PRETRAIN-EEG-TEXT-UNET":
+#                 if epoch < 50:
+#                     continue
+#                 elif epoch < 75:
+#                     for name, param in model.named_parameters():
+#                         if "eeg_encoder" in name:
+#                             param.requires_grad = False
+#                         if "emb_unet" in name:
+#                             param.requires_grad = True
+#                 args_dict = {
+#                     "model" : model,
+#                     "dataloader" : dataset_dict[task.dataset_tag],
+#                     "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate * lr_scale),
+#                     "tokenizer" : BART_tokenizer,
+#                     "criterion" : task.criterion,
+#                     "device" : device,
+#                     "device_ids" : device_ids,
+#                     "staging_device" : staging_device,
+#                     "bsz" : 256,
+#                 }
+#                 results = PRETRAIN_EEG_TEXT_UNET.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)
+#                 model = results["model"]
+#                 if "train_accuracy" in results:
+#                     if epoch % eval_interval == 0 and live_evaluate:
+#                         print(f">>>>>>>> TRAIN ACCURACY: {results['train_accuracy'] * 100 : 8.4f} % DEV ACCURACY: {results['dev_accuracy'] * 100 : 8.4f} %")
+#                         train_writer.add_scalar(f"{task.name} Accuracy", results['train_accuracy'] * 100, epoch)
+#                         dev_writer.add_scalar(f"{task.name} Accuracy", results['dev_accuracy'] * 100, epoch)
 
-                print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
-                train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
-                dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
-            elif task.name == "PRETRAIN-EEG-IMG-UNET":
-                if epoch < 50:
-                    continue
-                elif epoch < 75:
-                    for name, param in model.named_parameters():
-                        if "eeg_encoder" in name:
-                            param.requires_grad = False
-                        if "emb_unet" in name:
-                            param.requires_grad = True
+#                 print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
+#                 train_writer.add_scalar(f"{task.name} Loss", results['train_loss'], epoch)
+#                 dev_writer.add_scalar(f"{task.name} Loss", results['dev_loss'], epoch)
+#             elif task.name == "PRETRAIN-EEG-IMG-UNET":
+#                 if epoch < 50:
+#                     continue
+#                 elif epoch < 75:
+#                     for name, param in model.named_parameters():
+#                         if "eeg_encoder" in name:
+#                             param.requires_grad = False
+#                         if "emb_unet" in name:
+#                             param.requires_grad = True
                 args_dict = {
                     "model" : model,
                     "dataloader" : dataset_dict[task.dataset_tag],
