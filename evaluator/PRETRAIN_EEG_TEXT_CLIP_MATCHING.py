@@ -117,9 +117,9 @@ def evaluate(args_dict, using_non_pytorch_parallel=False):
     return results
 
 if __name__ == "__main__":
-    CKPT_DIR = "./checkpoints/DSG"
-    RESULTS_DIR = "./results/DSG"
-    MODEL_NAME = "MMMM_FINAL"
+    CKPT_DIR = "./checkpoints/PretrainPlus"
+    RESULTS_DIR = "./results/PretrainPlus"
+    MODEL_NAME = "MMMM_70"
     
     device="cuda"
     device_ids=[0,1,2,3]

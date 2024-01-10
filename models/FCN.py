@@ -22,13 +22,13 @@ class FCN(nn.Module):
         for i in range(num_layers - 1):
             self.hidden_layers.append(nn.Linear(hidden_dim, hidden_dim))
         self.output_layer = nn.Linear(hidden_dim, output_dim)
-        self.activation = activation
         self.device = device
         if not device == None:
             self.to(device)
         self.dtype = dtype
         self.to(dtype=dtype)
         self.dropout = None if dropout == None else nn.Dropout(p=dropout)
+        self.activation = None if activation == None else activation
 
     def forward(self, x, staging_device="cuda:0"):
         """

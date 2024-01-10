@@ -48,12 +48,12 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
         head=FCN(
             input_dim=840,
             output_dim=1024,
-            hidden_dim=1024,
-            num_layers=1,
+            hidden_dim=2048,
+            num_layers=4,
             device=device,
             dtype=dtype,
-            dropout=0.1,
-            activation=nn.LeakyReLU(negative_slope=0.25)
+            dropout=0.25,
+            activation=nn.GELU('tanh')
             )
         )
 
@@ -62,12 +62,12 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
         head=FCN(
             input_dim=128,
             output_dim=1024,
-            hidden_dim=1024,
-            num_layers=1,
+            hidden_dim=2048,
+            num_layers=4,
             device=device,
             dtype=dtype,
-            dropout=0.1,
-            activation=nn.LeakyReLU(negative_slope=0.25)
+            dropout=0.25,
+            activation=nn.GELU('tanh')
             )
         )
     
