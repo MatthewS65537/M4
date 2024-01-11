@@ -139,10 +139,6 @@ def objective(trial):
                 }
                 results = PRETRAIN_EEG_TEXT_CLIP_MATCHING.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel, verbose=False)
                 model = results["model"]
-#                 if "train_accuracy" in results:
-#                     if epoch % eval_interval == 0 and live_evaluate:
-#                         print(f">>>>>>>> TRAIN ACCURACY: {results['train_accuracy'] * 100 : 8.4f} % DEV ACCURACY: {results['dev_accuracy'] * 100 : 8.4f} %")
-#                 print(f">>>> {task.name} | TRAIN: {results['train_loss']} DEV: {results['dev_loss']} TIME: {time.time() - start:.2f} SECONDS")
 
                 trial.report(results['dev_loss'], epoch)
                 if trial.should_prune():
@@ -151,12 +147,11 @@ def objective(trial):
 
     return results['dev_loss']
 
-# study = optuna.create_study(direction='minimize')
 study = optuna.load_study(study_name="ETM-50", storage="sqlite:///OPTUNA-DB/ETM-50.db")
 study.optimize(objective, n_trials=25)
 
-pruned_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.PRUNED]
-complete_trials = [t for t in study.trials if t.state == optuna.structs.TrialState.COMPLETE]
+pruned_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]
+complete_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
 
 print("Study statistics: ")
 print("  Number of finished trials: ", len(study.trials))

@@ -51,7 +51,7 @@ if __name__ == "__main__":
         "test_run" : False,
         "live_evaluate" : True,
         "eval_interval" : 1,
-        "log_dir" : "./results/PretrainPlus-SGD/logs"
+        "log_dir" : "./logs"
     }
     
     device = config["device"]
@@ -83,8 +83,8 @@ if __name__ == "__main__":
             dataset_dict[key]["train"] = dataset_dict[key]["dev"] # Make things faster
             dataset_dict[key]["dev"] = dataset_dict[key]["test"] # Mimic an unseen set
             
-    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-AdamW")
-    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-AdamW")
+    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-PRETRAIN-TUNED-FINAL")
+    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-PRETRAIN-TUNED-FINAL")
             
     print(f"[INFO] PARAMETER COUNT")
     print(f"[INFO] >>>> {count_params(model)} TOTAL PARAMETERS.")
@@ -103,14 +103,17 @@ if __name__ == "__main__":
     # different tasks.
     print(f"[INFO] SETTING UP TRAINING TASKS...")
     dsg_tasks = DSGTasks()
-
+    
+#     hparams = {'lr': 1.4201593837329537e-05, 'beta1': 0.7014348222942296, 'beta2': 0.9743954103580398, 'eps': 6.45133637419436e-07, 'weight_decay': 7.290973770285979e-06, 'gamma': 0.8167180662558771}
+    
+    # hparams are tuned
     dsg_tasks.add_task(
         DSGTask(
             task_name="PRETRAIN-EEG-TEXT-CLIP-MATCHING",
             dataset_tag="ZuCo-CLIP",
             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
             optimizer=optim.AdamW,
-            learning_rate=4e-4,
+            learning_rate=1.5e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -123,7 +126,7 @@ if __name__ == "__main__":
             dataset_tag="Brain2Image",
             criterion=nn.KLDivLoss(reduction="batchmean"), # Symmetrized with Lambda inside train()
             optimizer=optim.AdamW,
-            learning_rate=2.5e-4,
+            learning_rate=1e-5,
             converge_lim=2,
             converge_threshold=0.005,
             div_threshold=0.01
@@ -160,35 +163,16 @@ if __name__ == "__main__":
     
     lr_scale = 1.0
     epoch = 0
-#     model.load_state_dict(torch.load("./checkpoints/PretrainPlus/MMMM_70.pt"))
+    gamma = 0.9
     num_epochs = 100
     print(f"[INFO] STARTING TRAINING.")
     while epoch < num_epochs:
         print(f"Epoch {epoch}")
         if epoch < 10:
             lr_scale = 0.2 + epoch * 0.08
-        elif epoch < 15:
-            lr_scale = 1.0
-        elif epoch < 25:
-            lr_scale = 0.3
-        elif epoch < 35:
-            lr_scale = 0.1
-        elif epoch < 40:
-            lr_scale = 0.5
-        elif epoch < 50:
-            lr_scale = 0.16
-        elif epoch < 65:
-            lr_scale = 0.05
-        elif epoch < 75:
-            lr_scale = 0.1
-        elif epoch < 85:
-            lr_scale = 0.03
-        elif epoch < 90:
-            lr_scale = 0.01
-        elif epoch < 95:
-            lr_scale = 0.05
-        elif epoch < 100:
-            lr_scale = 0.01
+        else:
+            lr_scale = gamma ** (epoch - 10)
+            
             
         
         epc_start = time.time()
@@ -203,7 +187,7 @@ if __name__ == "__main__":
                 args_dict = {
                     "model" : model,
                     "dataloader" : dataset_dict[task.dataset_tag],
-                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate * lr_scale),
+                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate * lr_scale, betas=(0.7, 0.975), eps=5e-7, weight_decay=7.5e-6),
                     "tokenizer" : BART_tokenizer,
                     "criterion" : task.criterion,
                     "device" : device,
@@ -235,7 +219,7 @@ if __name__ == "__main__":
                 args_dict = {
                     "model" : model,
                     "dataloader" : dataset_dict[task.dataset_tag],
-                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate * lr_scale),
+                    "optimizer" : task.optimizer(model.parameters(), lr=task.learning_rate * lr_scale, betas=(0.7, 0.975), eps=5e-7, weight_decay=7.5e-6),
                     "criterion" : task.criterion,
                     "device" : device,
                     "device_ids" : device_ids,
@@ -329,6 +313,6 @@ if __name__ == "__main__":
             
         print(f"TOT TIME: {time.time() - epc_start:.2f} SECONDS")
         if epoch + 1 % 5 == 0:
-            torch.save(model.state_dict(), f"./checkpoints/PretrainPlusSGD/MMMM_{epoch}.pt")
+            torch.save(model.state_dict(), f"./checkpoints/PretrainFinal/MMMM_{epoch}.pt")
         epoch += 1
-    torch.save(model.state_dict(), f"./checkpoints/PretrainPlusSGD/MMMM_FINAL.pt")
+    torch.save(model.state_dict(), f"./checkpoints/PretrainFinal/MMMM_FINAL.pt")
