@@ -83,8 +83,8 @@ if __name__ == "__main__":
             dataset_dict[key]["train"] = dataset_dict[key]["dev"] # Make things faster
             dataset_dict[key]["dev"] = dataset_dict[key]["test"] # Mimic an unseen set
             
-    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-PRETRAIN-TUNED-FINAL")
-    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-PRETRAIN-TUNED-FINAL")
+    train_writer = SummaryWriter(log_dir=f"{log_dir}/train-PRETRAIN-TUNED-FINAL2")
+    dev_writer = SummaryWriter(log_dir=f"{log_dir}/dev-PRETRAIN-TUNED-FINAL2")
             
     print(f"[INFO] PARAMETER COUNT")
     print(f"[INFO] >>>> {count_params(model)} TOTAL PARAMETERS.")
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     
     lr_scale = 1.0
     epoch = 0
-    gamma = 0.9
+    gamma = 0.935
     num_epochs = 100
     print(f"[INFO] STARTING TRAINING.")
     while epoch < num_epochs:
@@ -171,7 +171,7 @@ if __name__ == "__main__":
         if epoch < 10:
             lr_scale = 0.2 + epoch * 0.08
         else:
-            lr_scale = gamma ** (epoch - 10)
+            lr_scale = max(gamma ** (epoch - 10), 1e-3)
             
             
         
@@ -312,7 +312,7 @@ if __name__ == "__main__":
 #             torch.cuda.empty_cache()
             
         print(f"TOT TIME: {time.time() - epc_start:.2f} SECONDS")
-        if epoch + 1 % 5 == 0:
-            torch.save(model.state_dict(), f"./checkpoints/PretrainFinal/MMMM_{epoch}.pt")
+        if (epoch + 1) % 5 == 0:
+            torch.save(model.state_dict(), f"./checkpoints/PretrainFinal2/MMMM_{epoch}.pt")
         epoch += 1
-    torch.save(model.state_dict(), f"./checkpoints/PretrainFinal/MMMM_FINAL.pt")
+    torch.save(model.state_dict(), f"./checkpoints/PretrainFinal2/MMMM_FINAL.pt")

@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class ClassificationHead(nn.Module):
-    def __init__(self, input_dim=512, output_dim=10, hidden_dim=1024, num_layers=2, device=None, dtype=torch.float32, dropout=0.5):
+    def __init__(self, input_dim=512, output_dim=10, hidden_dim=1024, num_layers=2, device=None, dtype=torch.float32, dropout=0.25, activation=None):
         """
         Classification Neural Network model.
 
@@ -20,7 +20,6 @@ class ClassificationHead(nn.Module):
         for i in range(num_layers - 1):
             self.hidden_layers.append(nn.Linear(hidden_dim, hidden_dim))
         self.output_layer = nn.Linear(hidden_dim, output_dim)
-        self.activation = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)  # Add softmax activation
         self.device = device
         self.dtype = dtype
@@ -28,6 +27,7 @@ class ClassificationHead(nn.Module):
             self.to(device)
         self.to(dtype)
         self.dropout = dropout
+        self.activation = None if activation == None else activation
 
     def forward(self, x, temperature, staging_device="cuda:0"):
         """
@@ -43,6 +43,8 @@ class ClassificationHead(nn.Module):
         for layer in self.hidden_layers:
             if not self.dropout == None:
                 x = nn.Dropout(p=self.dropout)(x)
-            x = self.activation(layer(x))
+            layer = layer(x)
+            if not self.activation == None:
+                x = self.activation(x)
         x = self.softmax(self.output_layer(x)/temperature)  # Apply softmax activation
         return x

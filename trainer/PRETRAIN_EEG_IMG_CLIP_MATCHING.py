@@ -114,11 +114,11 @@ def train(args_dict, using_non_pytorch_parallel=False, verbose=False):
             if phase == 'train':
                 if device_ids == None:
                     loss.backward()
-#                 nn.utils.clip_grad_value_(model.parameters(), 10.0)
+                    nn.utils.clip_grad_value_(model.parameters(), 15.0)
                     optimizer.step()
                 else:
                     loss.mean().backward()
-#                 nn.utils.clip_grad_value_(model.parameters(), 10.0)
+                    nn.utils.clip_grad_value_(model.parameters(), 15.0)
                     optimizer.step()
 #                 print(loss.item())
 #                 print("Max: ", torch.max(torch.stack([torch.max(torch.tensor([0.0]).to(device) if parameter.grad == None else parameter.grad) for name, parameter in model.named_parameters()])))

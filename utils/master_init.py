@@ -113,7 +113,10 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             input_dim=768,
             output_dim=1024,
             num_layers=1,
-            device=device
+            device=device,
+            activation=nn.GELU('tanh'),
+            dropout=0.25,
+            activate_last=False
             ),
         body=BART_pretrained,
         device=device,
@@ -135,7 +138,10 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             output_dim=768,
             num_layers=4,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=0.25,
+            activation=nn.GELU('tanh'),
+            activate_last=True
         )
     )
                 
@@ -168,7 +174,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             input_dim=768,
             output_dim=768,
             num_layers=1,
-            device=device
+            device=device,
+            dropout=None,
+            activate_last=False
             ),
         body=DiffusionHead(
             scheduler=scheduler,
@@ -195,8 +203,11 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             output_dim=768,
             num_layers=4,
             device=device,
-            dtype=dtype
-            )
+            dtype=dtype,
+            dropout=0.25,
+            activation=nn.GELU('tanh'),
+            activate_last=True
+        )
     )
     
     print("LOADED EEG-IMG-DIFFUSION")
@@ -208,7 +219,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             output_dim=512,
             num_layers=1,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=None,
+            activate_last=False
             ),
         body=ClassificationHead(
             input_dim=512,
@@ -216,7 +229,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             hidden_dim=1024,
             num_layers=4,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=0.25,
+            activation=nn.GELU('tanh')
             ),
         device=device,
         dtype=dtype
@@ -236,7 +251,10 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             output_dim=768,
             num_layers=4,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=0.25,
+            activation=nn.GELU('tanh'),
+            activate_last=True
             )
         )
     print("LOADED EEG-IMG-CLASSIFICATION")
@@ -255,7 +273,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             hidden_dim=1024,
             num_layers=4,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=0.25,
+            activation=nn.GELU('tanh')
             ),
         device=device,
         dtype=dtype
@@ -272,7 +292,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             num_layers=4,
             device=device,
             dtype=dtype,
-            dropout=0.5
+            dropout=0.25,
+            activation=nn.GELU('tanh'),
+            activate_last=True
         )
     )
     print("LOADED EEG-TEXT-SENTIMENT")

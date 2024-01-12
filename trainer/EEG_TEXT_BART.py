@@ -72,12 +72,15 @@ def train(args_dict, using_non_pytorch_parallel=False):
             if phase == 'train':
                 if device_ids == None:
                     loss.backward()
+                    nn.utils.clip_grad_value_(model.parameters(), 15.0)
                     optimizer.step()
                 elif using_non_pytorch_parallel:
                     loss.backward()
+                    nn.utils.clip_grad_value_(model.parameters(), 15.0)
                     optimizer.step()
                 else:
                     loss.mean().backward()
+                    nn.utils.clip_grad_value_(model.parameters(), 15.0)
                     optimizer.step()
 
             # Compute stats
