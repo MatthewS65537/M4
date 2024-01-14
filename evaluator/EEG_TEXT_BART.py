@@ -125,9 +125,9 @@ def evaluate(args_dict, output_all_results_path = './Results/MMMM_EEG-TEXT-BART/
 
 
 if __name__ == '__main__': 
-    CKPT_DIR = "./checkpoints/Pretrain"
-    RESULTS_DIR = "./results/Pretrain"
-    MODEL_NAME = "MMMM_FINAL"
+    CKPT_DIR = "./tune_checkpoints/"
+    RESULTS_DIR = "./tune_results/BART"
+    MODEL_NAME = "BEST-BART"
     
     device="cuda"
     device_ids=[0,1,2,3]

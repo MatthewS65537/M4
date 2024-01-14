@@ -138,9 +138,9 @@ def evaluate(args_dict, image_save_path, using_non_pytorch_parallel=False):
     return results
 
 if __name__ == "__main__":
-    CKPT_DIR = "./checkpoints/DSG"
-    RESULTS_DIR = "./results/DSG"
-    MODEL_NAME = "MMMM_FINAL"
+    CKPT_DIR = "./checkpoints/PretrainPlus"
+    RESULTS_DIR = "./results/PretrainPlus"
+    MODEL_NAME = "MMMM_70"
     config = {
         "device" : "cuda",
         "device_ids" : [0,1,2,3]
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     model = nn.DataParallel(model,device_ids=device_ids).to(device,dtype=torch.float32)
     print("[INFO] Initialized model.")
     state_dict=torch.load(f"{CKPT_DIR}/{MODEL_NAME}.pt")
-    model.load_state_dict(state_dict)
+    model.load_state_dict(state_dict, strict=False)
     print("[INFO] Loaded model checkpoint.")
 
     dataset_dict = INITIALIZE_DATALOADERS(
