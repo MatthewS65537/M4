@@ -1,7 +1,9 @@
 # MMMM
-
 ## Note
-This repository is currently under development. All code is subject to final changes, and the author does not guarantee that the code is organized in any way, or immediately runnable.
+```diff
+- This repository is currently under development. All code is subject to final changes, and the author does not guarantee that the code is organized in any way, or immediately runnable.
+```
+This is an official implementation of M4, a universal **M**eta-Aligned **M**ulti-**M**odal **M**ulti-Task (4M) framework capable of training any model for the 4M setting with the correct modifications. This current example implementation of M4 is set for the task of decoding EEG signals.
 
 ## Abstract
 Since the days of Turing, a longstanding goal of artificial intelligence has been to understand the
@@ -26,6 +28,39 @@ EEG, among other proxy tasks. In addition to the conventional approach of learni
 adapter modules per task, we also experiment with meta-adapters to impart meta-learning capacities
 to $M^4$. Finally, we discuss limitations, societal implications, and upcoming research for our model
 
+## Environment Setup
+To set up the environment, run either `sh pip_install.sh` or the following command:
+```bash
+pip install -q scipy
+pip install -q h5py
+pip install -q matplotlib
+pip install -q torch torchvision torchaudio
+pip install -q transformers
+pip install -q fuzzy_match
+pip install -q nltk
+pip install -q rouge
+pip install -q diffusers
+pip install -q tensorboard
+pip install -q tqdm
+pip install -q accelerate
+pip install -q optuna optuna-dashboard
+```
+Our project relies on CUDA at the moment, so please also take time to either modify your code to use the hardware you have available, and/or ensure that your cuda driver and the current pytorch version do not clash. For the code to run with the settings described within the paper, you will require at least 4 x NVIDIA A100 80GB GPUs.
+
+## Data Preparation
+The data of our code is preprocessed and can be loaded via the command `sh LoadItemsGdrive.sh`. However, the command may not work in some environments, so you may wish to navigate to the DreamDiffusion and/or EEG-To-Text Githubs and follow their instructions there. After that is done, please also run `sh preprocess/preprocess.sh` to preprocess some of the necessary data.
+
+## Train
+### With Pretrain
+1. Modify the code within the necessary files to suit your needs.
+2. Run `python3 ./training/pretrain.py` to start the pretraining.
+3. Run `python3 ./training/continue_from_pretrain.py` to start training on the other tasks.
+## Without Pretrain
+1. Modify the code within the necessary files to suit your needs.
+2. Run `python3 ./training/training.py` to start the pretraining.
+
+
+--IGNORE BELOW THIS LINE--
 ## Code Explanation
 Our code is structured as follows:
 - `Colab Testing Notebooks/`: This directory contains Jupyter notebooks for testing.
