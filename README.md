@@ -55,9 +55,13 @@ The data of our code is preprocessed and can be loaded via the command `sh LoadI
 1. Modify the code within the necessary files to suit your needs.
 2. Run `python3 ./training/pretrain.py` to start the pretraining.
 3. Run `python3 ./training/continue_from_pretrain.py` to start training on the other tasks.
-## Without Pretrain
+##E Without Pretrain
 1. Modify the code within the necessary files to suit your needs.
 2. Run `python3 ./training/training.py` to start the pretraining.
+
+## Evaluate
+1. Modify the code within the necessary files to suit your needs.
+2. 2. Run `python3 ./evaluator/{task_name}.py` to start the pretraining where `{task_name}` is the task you wish to evaluate.
 
 
 --IGNORE BELOW THIS LINE--
