@@ -50,6 +50,15 @@ Our project relies on CUDA at the moment, so please also take time to either mod
 ## Data Preparation
 The data of our code is preprocessed and can be loaded via the command `sh LoadItemsGdrive.sh`. However, the command may not work in some environments, so you may wish to navigate to the DreamDiffusion and/or EEG-To-Text Githubs and follow their instructions there. After that is done, please also run `sh preprocess/preprocess.sh` to preprocess some of the necessary data.
 
+## Task List
+Below is a list of the tasks that we have implemented:
+1. EEG-TEXT MATCHING
+2. EEG-IMAGE MATCHING
+3. EEG-TEXT GENERATION
+4. EEG-IMAGE GENERATION
+5. EEG-SENTIMENT CLASSIFICATION
+6. EEG-IMAGE CLASSIFICATION
+   
 ## Train
 ### With Pretrain
 1. Modify the code within the necessary files to suit your needs.
@@ -61,32 +70,17 @@ The data of our code is preprocessed and can be loaded via the command `sh LoadI
 
 ## Evaluate
 1. Modify the code within the necessary files to suit your needs.
-2. 2. Run `python3 ./evaluator/{task_name}.py` to start the pretraining where `{task_name}` is the task you wish to evaluate.
+2. Run `python3 ./evaluator/{task_name}.py` to start the pretraining where `{task_name}` is the task you wish to evaluate.
 
-
---IGNORE BELOW THIS LINE--
-## Code Explanation
-Our code is structured as follows:
-- `Colab Testing Notebooks/`: This directory contains Jupyter notebooks for testing.
-- `ZuCo/`: This directory contains the ZuCo data processing script.
-- `models/`: This directory contains the model definitions.
-- `testing/`: This directory contains the testing scripts.
-- `training/`: This directory contains the training scripts.
-- `trainer/`: This directory contains the separate trainers and evaluators (if applicable) for each task.
-- `tuning/`: This directory contains the tuning scripts.
-- `utils/`: This directory contains utility scripts, such as the dataloaders, initialization functions, etc.
-- `preprocess/`: This directory contains some preprocessing scripts.
-
-## How to Run?
-1. Clone the repository to your local machine.
-2. Navigate to the project directory.
-3. Run `sh pip_install.sh` to install the necessary dependencies.
-4. Run `sh LoadItemsGdrive.sh` to install the files. If you don't find anything please check the file to ensure that all lines are uncommented the first time you run it through.
-5. Run `sh preprocess/preprocess.sh` to preprocess some of the necessary data.
-6. Run `python3 ./training/train.py` to start the training.
-7. By commenting out some of the add_task() lines, you can choose train on only a few select tasks.
+## Results
+### Text-Based Tasks
+### Image-Based Tasks
+### Generative Results
+### Demos
 
 ## Acknowledgements
+Some code from this repository has been borrowed from EEG-To-Text and (Pytorch Parallel? Check which repo/forum thread). A sincere thank you to their wonderful work.
+
 This research has been conducted while I was working a research internship at Carnegie Mellon University.
 The views and conclusions contained herein are mine and should not be interpreted necessarily as those
 representing that of Carnegie Mellon University, either expressed or implied.
