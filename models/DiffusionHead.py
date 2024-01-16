@@ -35,7 +35,7 @@ class DiffusionHead(nn.Module):
         if "train" in args_dict and args_dict["train"]:
             emb=args_dict["input_data_batch"].to(self.dtype)
             emb=emb.reshape(emb.shape[0], 1, 768)
-            g=7.5
+#             g=args_dict["g"] if "g" in args_dict else 7.5
             timesteps=args_dict["timesteps"]
             noisy_latents=args_dict["noisy_latents"].to(self.dtype)
             res=self.unet(noisy_latents, timesteps, emb).sample
@@ -44,7 +44,7 @@ class DiffusionHead(nn.Module):
             emb=args_dict["input_data_batch"].to(self.dtype)
             dim=args_dict["dim"] if "dim" in args_dict else 512
             steps=30
-            g=7.5 # guidance factor
+            g=args_dict["g"] if "g" in args_dict else 7.5
 #             print(emb.shape)
             bsz=emb.shape[0]
             emb = emb * torch.ones((bsz, 77, 768)).to(self.device,dtype=self.dtype)

@@ -9,7 +9,7 @@ from ClassificationHead import *
 from MMMM import *
 from emb_unet import *
 from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig, CLIPTokenizer, CLIPTextModel
-from diffusers import UNet2DConditionModel, LMSDiscreteScheduler
+from diffusers import UNet2DConditionModel, LMSDiscreteScheduler, DDPMScheduler
 from load_data import *
 from dataloader import *
 import torch
@@ -151,7 +151,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
     
     # Initializing a scheduler and Setting number of sampling steps
     scheduler = LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000)
-    scheduler.set_timesteps(50)
+#     scheduler.set_timesteps(30)
     
     # Initializing the U-Net model
     unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet", torch_dtype=dtype)
@@ -230,7 +230,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             num_layers=4,
             device=device,
             dtype=dtype,
-            dropout=0.25,
+            dropout=0.1,
             activation=nn.GELU('tanh')
             ),
         device=device,
@@ -252,7 +252,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             num_layers=4,
             device=device,
             dtype=dtype,
-            dropout=0.25,
+            dropout=0.1,
             activation=nn.GELU('tanh'),
             activate_last=True
             )
@@ -265,7 +265,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             output_dim=512,
             num_layers=1,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=None,
+            activate_last=False
             ),
         body=ClassificationHead(
             input_dim=512,
@@ -274,7 +276,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             num_layers=4,
             device=device,
             dtype=dtype,
-            dropout=0.25,
+            dropout=0.1,
             activation=nn.GELU('tanh')
             ),
         device=device,
@@ -292,7 +294,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             num_layers=4,
             device=device,
             dtype=dtype,
-            dropout=0.25,
+            dropout=0.1,
             activation=nn.GELU('tanh'),
             activate_last=True
         )
