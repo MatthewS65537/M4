@@ -24,7 +24,7 @@ In the experiment, our training data is derived from ZuCoV1.0/2.0 and Brain2Imag
 a new downstream benchmark focused on cross-modal EEG decoding, and image generation from
 EEG, among other proxy tasks. In addition to the conventional approach of learning single-purpose
 adapter modules per task, we also experiment with meta-adapters to impart meta-learning capacities
-to M^4. Finally, we discuss limitations, societal implications, and upcoming research for our model
+to $M^4$. Finally, we discuss limitations, societal implications, and upcoming research for our model
 
 ## Code Explanation
 Our code is structured as follows:
@@ -47,13 +47,10 @@ Our code is structured as follows:
 6. Run `python3 ./training/train.py` to start the training.
 7. By commenting out some of the add_task() lines, you can choose train on only a few select tasks.
 
-## Citation
-If you use our software in your research, please cite our paper as follows:
+## Acknowledgements
+This research has been conducted while I was working a research internship at Carnegie Mellon University.
+The views and conclusions contained herein are mine and should not be interpreted necessarily as those
+representing that of Carnegie Mellon University, either expressed or implied.
 
-```bibtex
-@article{author2022MMMM,
-  title={Title of the paper},
-  author={Author, A. and Coauthor, B.},
-  journal={Journal name},
-  year={2022}
-}
+As a final note, I would like to express their thanks to Microsoft Research for their hardware, and Carnegie
+Mellon University for their generous funding, which has been critical to ensuring the success of this project.
