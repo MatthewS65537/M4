@@ -1,5 +1,30 @@
 # MMMM
-Blah Blah Blah
+
+## Note
+This repository is currently under development. All code is subject to final changes, and the author does not guarantee that the code is organized in any way, or immediately runnable.
+
+## Abstract
+Since the days of Turing, a longstanding goal of artificial intelligence has been to understand the
+intricate workings of the human brain. As such, we explore the task of decoding EEG signals
+using a 4M paradigm - one that is Meta learned, Multi-Modal, and Multi-task. While state-of-the-art
+(SOTA) Large Language Models (LLMs) such as LLaMA-2 and GPT-4 have recently been augmented
+with some multimodal capabilities alongside their formidable Natural Language Processing (NLP)
+performance, they do not readily fit into a true 4M setting.
+Unlike GPT-4 which employs DALL-E 3 in a somewhat plug-and-play fashion, we utilize cross-modal
+alignment techniques to more tightly integrate multiple modalities into a unified 4M framework.
+Through comprehensive benchmarking, we address alignment method limitations around noisy data,
+low-resource tasks, and generalizability. We further assemble a novel EEG analysis dataset by
+consolidating several existing ones.
+Based on curated data, we develop an encompassing 4M training paradigm and employ it to construct
+$M^4$ - our Meta-aligned Multi-Modal Multi-task Model. As a tri-modal architecture with 1.5 billion
+parameters, $M^4$ is capable of encoding text, image, and EEG inputs to fulfill numerous downstream
+prediction tasks. We enhance the training process using a learning rate modulation technique to
+promote balanced multi-task abilities.
+In the experiment, our training data is derived from ZuCoV1.0/2.0 and Brain2Image. We also build
+a new downstream benchmark focused on cross-modal EEG decoding, and image generation from
+EEG, among other proxy tasks. In addition to the conventional approach of learning single-purpose
+adapter modules per task, we also experiment with meta-adapters to impart meta-learning capacities
+to M^4. Finally, we discuss limitations, societal implications, and upcoming research for our model
 
 ## Code Explanation
 Our code is structured as follows:
