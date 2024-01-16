@@ -155,10 +155,10 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
     
     # Initializing the U-Net model
     unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet", torch_dtype=dtype)
-    unet_peft_config = LoraConfig(
-       inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1, init_lora_weights="gaussian", target_modules=["to_k", "to_q", "to_v", "to_out.0"],
-    )
-    unet = get_peft_model(unet, unet_peft_config)
+#     unet_peft_config = LoraConfig(
+#        inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1, init_lora_weights="gaussian", target_modules=["to_k", "to_q", "to_v", "to_out.0"],
+#     )
+#     unet = get_peft_model(unet, unet_peft_config)
                 
     print("LOADED U-NET")
 
@@ -230,7 +230,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             num_layers=4,
             device=device,
             dtype=dtype,
-            dropout=0.1,
+            dropout=0.5,
             activation=nn.GELU('tanh')
             ),
         device=device,
@@ -252,7 +252,7 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             num_layers=4,
             device=device,
             dtype=dtype,
-            dropout=0.1,
+            dropout=0.5,
             activation=nn.GELU('tanh'),
             activate_last=True
             )
