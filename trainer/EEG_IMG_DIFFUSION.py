@@ -38,7 +38,9 @@ def train(args_dict, using_non_pytorch_parallel=False):
     device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
     staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
     bsz = args_dict["bsz"] if "bsz" in args_dict else 64
-#     latent_dict = args_dict["latent_dict"]
+    
+    noise_scheduler = args_dict["noise_scheduler"] # LMSDiscreteScheduler
+#     noise_scheduler.set_timesteps(1000) # Don't need this?
     del args_dict
 
     if staging_device==None:
@@ -86,11 +88,13 @@ def train(args_dict, using_non_pytorch_parallel=False):
             masks_batch = torch.stack(masks)
             invert_masks_batch = torch.stack(invert_masks)
             
-            timesteps = torch.randint(0, 30, (len(eegs),))
+            timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (len(eegs),))
             timesteps = timesteps.long()
             
             noise = torch.randn_like(latents)
-            noisy_latents = latents + noise
+#             print(latents.shape, noise.shape, timesteps.shape)
+            noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+#             noisy_latents = latents + noise
             
             model.zero_grad()
             optimizer.zero_grad()
@@ -140,6 +144,7 @@ if __name__ == "__main__":
 
     # model = INITIALIZE_MODEL(device=device, device_ids=device_ids).to(device)
     model = INITIALIZE_MODEL(device=device, device_ids=device_ids).to(device, dtype=torch.float32)
+    noise_scheduler = LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000)
 
     dataset_dict = INITIALIZE_DATALOADERS(
         keys=["Brain2Image"],
@@ -188,7 +193,8 @@ if __name__ == "__main__":
             "device" : device,
             "device_ids" : device_ids,
             "staging_device" : staging_device,
-            "vae" : vae
+            "vae" : vae,
+            "noise_scheduler" : noise_scheduler
         }
         results = train(args_dict)
         model = results["model"]

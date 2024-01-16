@@ -119,9 +119,9 @@ def evaluate(args_dict, using_non_pytorch_parallel=False):
     return results
 
 if __name__ == "__main__":
-    CKPT_DIR = "./checkpoints/Pretrain"
-    RESULTS_DIR = "./results/Pretrain"
-    MODEL_NAME = "MMMM_FINAL"
+    CKPT_DIR = "./checkpoints/layerwise"
+    RESULTS_DIR = "./results/layerwise-dropout--0-5-FINAL"
+    MODEL_NAME = "MMMM_SENT-ONLY_FINAL-DROPOUT--0-5-FINAL"
     
     device="cuda"
     device_ids=[0,1,2,3]

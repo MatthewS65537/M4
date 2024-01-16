@@ -118,9 +118,9 @@ def evaluate(args_dict, using_non_pytorch_parallel=False):
     return results
 
 if __name__ == "__main__":
-    CKPT_DIR = "./checkpoints/PretrainPlus"
-    RESULTS_DIR = "./results/PretrainPlus"
-    MODEL_NAME = "MMMM_70"
+    CKPT_DIR = "./checkpoints/PretrainFinal2"
+    RESULTS_DIR = "./results/PretrainFinal2"
+    MODEL_NAME = "MMMM_39"
     
     device="cuda"
     device_ids=[0,1,2,3]
@@ -140,7 +140,7 @@ if __name__ == "__main__":
     dataloader=dataloaders["Brain2Image"]
     tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
     
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.KLDivLoss(reduction="batchmean")
     
     args_dict = {
         "dataloader":dataloader,
@@ -160,5 +160,5 @@ if __name__ == "__main__":
         results[dev_bsz] = evaluate(args_dict)
         print(results[dev_bsz])
     import pickle
-    with open(f"{RESULTS_DIR}/EIM_SRR.pkl", "wb") as f:
+    with open(f"{RESULTS_DIR}/EIM_SRR_{MODEL_NAME}.pkl", "wb") as f:
         pickle.dump(results, f)

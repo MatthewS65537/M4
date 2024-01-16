@@ -9,12 +9,13 @@ from ClassificationHead import *
 from MMMM import *
 from emb_unet import *
 from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig, CLIPTokenizer, CLIPTextModel
-from diffusers import UNet2DConditionModel, LMSDiscreteScheduler
+from diffusers import UNet2DConditionModel, LMSDiscreteScheduler, DDPMScheduler
 from load_data import *
 from dataloader import *
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from peft import LoraConfig, get_peft_model
 
 def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
     """
@@ -96,6 +97,11 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
     ### LOAD EEG-TEXT-BART ###
     BART_tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
     BART_pretrained = BartForConditionalGeneration.from_pretrained('facebook/bart-large').to(dtype=dtype)
+    BART_peft_config = LoraConfig(
+       inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1
+    )
+    BART_pretrained = get_peft_model(BART_pretrained, BART_peft_config)
+    
     print("LOADED BART MODEL")
     
 #     if not device_ids == None:
@@ -107,7 +113,10 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             input_dim=768,
             output_dim=1024,
             num_layers=1,
-            device=device
+            device=device,
+            activation=nn.GELU('tanh'),
+            dropout=0.25,
+            activate_last=False
             ),
         body=BART_pretrained,
         device=device,
@@ -129,16 +138,12 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             output_dim=768,
             num_layers=4,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=0.25,
+            activation=nn.GELU('tanh'),
+            activate_last=True
         )
     )
-    
-    for name, param in BART_branch.named_parameters():
-        if param.requires_grad and 'body' in name:
-            if ('shared' in name) or ('embed_positions' in name) or ('encoder.layers.0' in name) or ('encoder.layers.1' in name):
-                continue
-            else:
-                param.requires_grad = False
                 
     print("LOADED EEG-TEXT-BART")
 
@@ -146,16 +151,14 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
     
     # Initializing a scheduler and Setting number of sampling steps
     scheduler = LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000)
-    scheduler.set_timesteps(50)
+#     scheduler.set_timesteps(30)
     
     # Initializing the U-Net model
     unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet", torch_dtype=dtype)
-    for name, param in unet.named_parameters():
-        if param.requires_grad:
-            if ('down_blocks' in name) or ('conv_in' in name) or ('time_embedding' in name):
-                continue
-            else:
-                param.requires_grad = False
+#     unet_peft_config = LoraConfig(
+#        inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1, init_lora_weights="gaussian", target_modules=["to_k", "to_q", "to_v", "to_out.0"],
+#     )
+#     unet = get_peft_model(unet, unet_peft_config)
                 
     print("LOADED U-NET")
 
@@ -171,7 +174,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             input_dim=768,
             output_dim=768,
             num_layers=1,
-            device=device
+            device=device,
+            dropout=None,
+            activate_last=False
             ),
         body=DiffusionHead(
             scheduler=scheduler,
@@ -198,8 +203,11 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             output_dim=768,
             num_layers=4,
             device=device,
-            dtype=dtype
-            )
+            dtype=dtype,
+            dropout=0.25,
+            activation=nn.GELU('tanh'),
+            activate_last=True
+        )
     )
     
     print("LOADED EEG-IMG-DIFFUSION")
@@ -211,7 +219,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             output_dim=512,
             num_layers=1,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=None,
+            activate_last=False
             ),
         body=ClassificationHead(
             input_dim=512,
@@ -219,7 +229,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             hidden_dim=1024,
             num_layers=4,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=0.5,
+            activation=nn.GELU('tanh')
             ),
         device=device,
         dtype=dtype
@@ -239,7 +251,10 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             output_dim=768,
             num_layers=4,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=0.5,
+            activation=nn.GELU('tanh'),
+            activate_last=True
             )
         )
     print("LOADED EEG-IMG-CLASSIFICATION")
@@ -250,7 +265,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             output_dim=512,
             num_layers=1,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=None,
+            activate_last=False
             ),
         body=ClassificationHead(
             input_dim=512,
@@ -258,7 +275,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             hidden_dim=1024,
             num_layers=4,
             device=device,
-            dtype=dtype
+            dtype=dtype,
+            dropout=0.1,
+            activation=nn.GELU('tanh')
             ),
         device=device,
         dtype=dtype
@@ -275,7 +294,9 @@ def INITIALIZE_MODEL(device="cuda", device_ids=None, dtype=torch.float32):
             num_layers=4,
             device=device,
             dtype=dtype,
-            dropout=0.5
+            dropout=0.1,
+            activation=nn.GELU('tanh'),
+            activate_last=True
         )
     )
     print("LOADED EEG-TEXT-SENTIMENT")

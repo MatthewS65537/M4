@@ -72,29 +72,30 @@ if __name__ == "__main__":
     state_dict = torch.load(f"./checkpoints/Pretrain/MMMM_FINAL.pt")
     model.load_state_dict(state_dict)
     del state_dict
-    print(f"[INFO] GRAD FREE PARAMETERS:")
-    for name, param in model.named_parameters():
-        print(name, end=" ")
-        param.requires_grad = True
-        if "eeg_encoder" in name:
-            print("NO GRAD")
-            param.requires_grad = False
-        if "branches.EEG-IMG-DIFFUSION.body.unet" in name:
-            if ('down_blocks' in name) or ('conv_in' in name) or ('time_embedding' in name):
-                print("YES GRAD")
-                continue
-            else:
-                print("NO GRAD")
-                param.requires_grad = False
-        elif "branches.EEG-TEXT-BART.body.model" in name:
-            if ('shared' in name) or ('embed_positions' in name) or ('encoder.layers.0' in name) or ('encoder.layers.1' in name):
-                print("YES GRAD")
-                continue
-            else:
-                print("NO GRAD")
-                param.requires_grad = False
-        else:
-            print()
+#     print(f"[INFO] GRAD FREE PARAMETERS:")
+#     for name, param in model.named_parameters():
+#         print(name, end=" ")
+#         param.requires_grad = True
+#         if "eeg_encoder" in name:
+#             print("NO GRAD")
+#             param.requires_grad = False
+#         if "branches.EEG-IMG-DIFFUSION.body.unet" in name:
+#             if ('down_blocks' in name) or ('conv_in' in name) or ('time_embedding' in name):
+#                 print("YES GRAD")
+#                 continue
+#             else:
+#                 print("NO GRAD")
+#                 param.requires_grad = False
+#         elif "branches.EEG-TEXT-BART.body.model" in name:
+#             if ('shared' in name) or ('embed_positions' in name) or ('encoder.layers.0' in name) or ('encoder.layers.1' in name):
+#                 print("YES GRAD")
+#                 continue
+#             else:
+#                 print("NO GRAD")
+#                 param.requires_grad = False
+#         else:
+#             print()
+
     print(f"[INFO] Initializing Dataloaders")
     dataset_dict = INITIALIZE_DATALOADERS(
         keys=["ZuCo-BART", "ZuCo-CLIP", "Brain2Image"],

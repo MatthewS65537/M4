@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 import numpy as np
 
-def train(args_dict, using_non_pytorch_parallel=False):
+def train(args_dict, using_non_pytorch_parallel=False, verbose=False):
     dataloader = args_dict["dataloader"]
     model = args_dict["model"]
     optimizer = args_dict["optimizer"]
@@ -114,11 +114,11 @@ def train(args_dict, using_non_pytorch_parallel=False):
             if phase == 'train':
                 if device_ids == None:
                     loss.backward()
-#                 nn.utils.clip_grad_value_(model.parameters(), 10.0)
+                    nn.utils.clip_grad_value_(model.parameters(), 15.0)
                     optimizer.step()
                 else:
                     loss.mean().backward()
-#                 nn.utils.clip_grad_value_(model.parameters(), 10.0)
+                    nn.utils.clip_grad_value_(model.parameters(), 15.0)
                     optimizer.step()
 #                 print(loss.item())
 #                 print("Max: ", torch.max(torch.stack([torch.max(torch.tensor([0.0]).to(device) if parameter.grad == None else parameter.grad) for name, parameter in model.named_parameters()])))
@@ -146,7 +146,8 @@ def train(args_dict, using_non_pytorch_parallel=False):
         results[f"{phase}_loss"] = epoch_loss
         if bool_eval:
             results[f"{phase}_accuracy"] = correct / tot
-            print(f"{phase}: {correct}/{tot}")
+            if verbose:
+                print(f"{phase}: {correct}/{tot}")
     results["model"] = model
     return results
 
