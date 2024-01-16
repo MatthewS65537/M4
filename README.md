@@ -64,7 +64,7 @@ Below is a list of the tasks that we have implemented:
 1. Modify the code within the necessary files to suit your needs.
 2. Run `python3 ./training/pretrain.py` to start the pretraining.
 3. Run `python3 ./training/continue_from_pretrain.py` to start training on the other tasks.
-##E Without Pretrain
+### Without Pretrain
 1. Modify the code within the necessary files to suit your needs.
 2. Run `python3 ./training/training.py` to start the pretraining.
 
@@ -74,9 +74,18 @@ Below is a list of the tasks that we have implemented:
 
 ## Results
 ### Text-Based Tasks
+
 ### Image-Based Tasks
+
 ### Generative Results
+
 ### Demos
+#### EEG-Text Matching
+#### EEG-Image Matching
+#### EEG-Text Generation
+#### EEG-Image Generation
+#### EEG-Sentiment Classification
+#### EEG-Image Classification
 
 ## Acknowledgements
 Some code from this repository has been borrowed from EEG-To-Text and (Pytorch Parallel? Check which repo/forum thread). A sincere thank you to their wonderful work.
