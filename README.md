@@ -108,11 +108,13 @@ Below is a list of the tasks that we have implemented:
 ### Hyperparameters
 #### $M^4$ Simple Round Robin
 |Epochs|Warmup (Pre-training Tasks)|N/A|
+|---|---|---|
 ||Pre-training|N/A|
 ||Training|50|
 
 #### $M^4$ DSG+
 |Epochs|Warmup (Pre-training Tasks)|15|
+|---|---|---|
 ||Pre-training|35|
 ||Training|50|
 |LR Decay ($\gamma$)|ETM|N/A|
