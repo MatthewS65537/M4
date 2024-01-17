@@ -165,14 +165,14 @@ Below is a list of the tasks that we have implemented:
 | IMG-CLASSIFICATION | 5e-5 | Adam | 256 | 0.04 |
 
 #### $M^4$ Layerwise (NEED REDO FORMAT)
-| Task Abbreviation | Learning Rate | Optimizer | $\beta_1, \beta_2, \epsilon$ | weight decay, γ | Step Interval | Step Ratio | Batch Size | Temperature |
-|---|---|---|---|---|---|---|---|---|
-| ETM | 5e-5 | Adam | Default | Default | N/A | N/A | 256 | 20 |
-| EIM | 3e-5 | Adam | Default | Default | N/A | N/A | 256 | 20 |
-| TEXT_GEN | 1.7e-5 | AdamW | 0.83, 0.94, 2.87e-6 | 1.76e-6, 0.912 | 10 | 0.4 | 256 | N/A |
-| IMG-GEN | 3e-5 | AdamW | 0.8, 0.9 | 0.01, 0.9 | 5.03 | N/A | 32 | N/A |
-| SENT-CLASSIFICATION | 1e-5 | AdamW | 0.85, 0.97, 6.7e-6 | 3.6e-6, 0.912 | N/A | N/A | 256 | 0.04 |
-| IMG-CLASSIFICATION | 5e-4 | AdamW | 0.9, 0.999, 6.7e-6 | 7.6e-7, 0.95 | N/A | N/A | 256 | 0.04 |
+| Task Abbreviation | Learning Rate | Optimizer | $\beta_1$ | $\beta_2$ | $\epsilon$ | Weight Decay | $\gamma$ | Step Interval | Step Ratio | Batch Size | Temperature |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| ETM | 5e-5 | Adam | Default | Default | Default | Default | N/A | N/A | 256 | 20 |
+| EIM | 3e-5 | Adam | Default | Default | Default | Default | N/A | N/A | 256 | 20 |
+| TEXT_GEN | 1.7e-5 | AdamW | 0.83 | 0.94 | 2.87e-6 | 1.76e-6 | 0.912 | 10.04 | N/A | 256 | N/A |
+| IMG-GEN | 3e-5 | AdamW | 0.8 | 0.9 | 0.01 | 0.9 | 5.03 | N/A | 32 | N/A |
+| SENT-CLASSIFICATION | 1e-5 | AdamW | 0.85 | 0.97 | 6.7e-6 | 3.6e-6 | 0.912 | N/A | N/A | 256 | 0.04 |
+| IMG-CLASSIFICATION | 5e-4 | AdamW | 0.9 | 0.999 | 6.7e-6 | 7.6e-7 | 0.95 | N/A | N/A | 256 | 0.04 |
 
 
 
