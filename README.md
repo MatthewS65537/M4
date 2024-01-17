@@ -89,7 +89,8 @@ Below are some of results we present in our paper, which has not yet been releas
 
 ### Demos
 #### EEG-Text Matching
-![ETM-Demo](https://github.com/MatthewS65537/M4/assets/136693480/9ee4d9c4-0e6e-4744-94b0-b171d1b3905c)
+![ETM-Demo-Slow](https://github.com/MatthewS65537/M4/assets/136693480/7a367a08-ee99-493d-bc52-75b22dbd8e08)
+
 #### EEG-Image Matching
 #### EEG-Text Generation
 #### EEG-Image Generation
