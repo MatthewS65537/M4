@@ -1,3 +1,7 @@
+<script
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+  type="text/javascript">
+</script>
 # M4
 ## Note
 ```diff
@@ -74,6 +78,21 @@ Below is a list of the tasks that we have implemented:
 
 ## Results
 ### Text-Based Tasks
++-----------------------------+------------------------------------------------------+--------------------------------------+
+| Tasks                       | EEG-Text-Generation                                  | EEG-Sentiment Classification         |
++-----------------------------+--------------------------+---------------------------+--------------------------------------+
+| Metrics                     | BLEU-N                   | ROUGE-1 (%)               | Sentiment Classification             |
+|                             +------+------+------+-----+--------+-----------+------+-----------+--------+----------+------+
+|                             | N=1  | N=2  | N=3  | N=4 | Recall | Precision | F1   | Precision | Recall | Accuracy | F1   |
++-----------------------------+------+------+------+-----+--------+-----------+------+-----------+--------+----------+------+
+| Ours                        |                                                                                             |
++-----------------------------+------+------+------+-----+--------+-----------+------+-----------+--------+----------+------+
+| $M^4$-SRR                   | 31.8 | 16.9 | 10.6 | 7.6 | 22.7   | 25.2      | 23.8 | 12.5      | 33.3   | 18.2     | 58.3 |
++-----------------------------+------+------+------+-----+--------+-----------+------+-----------+--------+----------+------+
+| $M^4$-DSG+ (Full-train)     | 35.7 | 20.0 | 12.0 | 7.0 | 26.5   | 29.7      | 27.9 | 29.7      | 30.0   | 27.1     | 52.6 |
++-----------------------------+------+------+------+-----+--------+-----------+------+-----------+--------+----------+------+
+| $M^4$-Layerwise (Full-train | 41.4 | 23.7 | 13.4 | 7.9 | 28.1   | 33.3      | 30.3 | 33.4      | 32.9   | 32.6     | 55.4 |
++-----------------------------+------+------+------+-----+--------+-----------+------+-----------+--------+----------+------+
 
 
 ### Image-Based Tasks
@@ -164,15 +183,15 @@ Below is a list of the tasks that we have implemented:
 | SENT-CLASSIFICATION | 5e-5 | Adam | 256 | 0.04 |
 | IMG-CLASSIFICATION | 5e-5 | Adam | 256 | 0.04 |
 
-#### $M^4$ Layerwise (NEED REDO FORMAT)
+#### $M^4$ Layerwise
 | Task Abbreviation | Learning Rate | Optimizer | $\beta_1$ | $\beta_2$ | $\epsilon$ | Weight Decay | $\gamma$ | Step Interval | Step Ratio | Batch Size | Temperature |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | ETM | 5e-5 | Adam | Default | Default | Default | Default | N/A | N/A | 256 | 20 |
 | EIM | 3e-5 | Adam | Default | Default | Default | Default | N/A | N/A | 256 | 20 |
-| TEXT_GEN | 1.7e-5 | AdamW | 0.83 | 0.94 | 2.87e-6 | 1.76e-6 | 0.912 | 10.04 | N/A | 256 | N/A |
-| IMG-GEN | 3e-5 | AdamW | 0.8 | 0.9 | 0.01 | 0.9 | 5.03 | N/A | 32 | N/A |
-| SENT-CLASSIFICATION | 1e-5 | AdamW | 0.85 | 0.97 | 6.7e-6 | 3.6e-6 | 0.912 | N/A | N/A | 256 | 0.04 |
-| IMG-CLASSIFICATION | 5e-4 | AdamW | 0.9 | 0.999 | 6.7e-6 | 7.6e-7 | 0.95 | N/A | N/A | 256 | 0.04 |
+| TEXT_GEN | 1.7e-5 | AdamW | 0.83 | 0.94 | 2.87e-6 | 1.76e-6 | 0.92 | 10 | 0.4 | 256 | N/A |
+| IMG-GEN | 3e-5 | AdamW | 0.8 | 0.9 | 5e-7 | 0.01 | 0.9 | 5 | 0.3 | 32 | N/A |
+| SENT-CLASSIFICATION | 1e-5 | AdamW | 0.85 | 0.97 | 6.7e-7 | 6.3e-7 | 0.912 | N/A | N/A | 256 | 0.04 |
+| IMG-CLASSIFICATION | 5e-4 | AdamW | 0.9 | 0.999 | 6.7e-7 | 6.3e-7 | 0.95 | N/A | N/A | 256 | 0.04 |
 
 
 
