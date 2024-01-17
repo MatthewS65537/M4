@@ -88,10 +88,8 @@ Below are some of results we present in our paper, which has not yet been releas
 
 
 ### Demos
-We used imgflip.com to create GIFs for some demos, which is why they have a watermark.
 #### EEG-Text Matching
-![ETMDemo](https://github.com/MatthewS65537/M4/assets/136693480/4f9d2b9f-078e-4bcf-8aee-2f0bbb71169a)
-
+![ETM-Demo](https://github.com/MatthewS65537/M4/assets/136693480/9ee4d9c4-0e6e-4744-94b0-b171d1b3905c)
 #### EEG-Image Matching
 #### EEG-Text Generation
 #### EEG-Image Generation
