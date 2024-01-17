@@ -97,6 +97,8 @@ Below are some of results we present in our paper, which has not yet been releas
 #### EEG-Text Generation
 #### EEG-Image Generation
 #### EEG-Sentiment Classification
+![Sentiment-Classification-Demo-250](https://github.com/MatthewS65537/M4/assets/136693480/36e30f1c-31fd-40fe-ae85-eb8f6900d075)
+
 #### EEG-Image Classification
 
 ## Model Specifics
