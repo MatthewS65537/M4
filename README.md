@@ -1,4 +1,4 @@
-![Sentiment-Classification-Demo](https://github.com/MatthewS65537/M4/assets/136693480/5b686fb8-3187-416e-b0bb-5b8d8c81d492)# M4
+# M4
 ## Note
 ```diff
 - This repository is currently under development. All code is subject to final changes, and the author does not guarantee that the code is organized in any way, or immediately runnable.
