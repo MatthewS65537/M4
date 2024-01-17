@@ -1,4 +1,4 @@
-# M4
+![Sentiment-Classification-Demo](https://github.com/MatthewS65537/M4/assets/136693480/5b686fb8-3187-416e-b0bb-5b8d8c81d492)# M4
 ## Note
 ```diff
 - This repository is currently under development. All code is subject to final changes, and the author does not guarantee that the code is organized in any way, or immediately runnable.
@@ -97,7 +97,9 @@ Below are some of results we present in our paper, which has not yet been releas
 #### EEG-Text Generation
 #### EEG-Image Generation
 #### EEG-Sentiment Classification
-![Sentiment-Classification-Demo-250](https://github.com/MatthewS65537/M4/assets/136693480/36e30f1c-31fd-40fe-ae85-eb8f6900d075)
+![Sentiment-Classification-Demo-250](https://github.com/MatthewS65537/M4/assets/136693480/441a1549-f1f5-4cb8-8466-6d073542cb34)
+
+
 
 #### EEG-Image Classification
 
