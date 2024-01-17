@@ -87,7 +87,7 @@ Below are some of results we present in our paper, which has not yet been releas
 <img width="492" alt="Screenshot 2024-01-17 at 16 31 21" src="https://github.com/MatthewS65537/M4/assets/136693480/f07c2eca-7045-4645-a03e-8d7645abfaa0">
 
 
-### Demos
+### Downstream Applications of Our Tasks
 #### EEG-Text Matching
 ![ETM-Demo-250](https://github.com/MatthewS65537/M4/assets/136693480/6aa43c3b-9f1c-4f3d-b240-88faee1948b2)
 
