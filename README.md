@@ -1,4 +1,3 @@
-</script>
 # M4
 ## Note
 ```diff
@@ -74,6 +73,7 @@ Below is a list of the tasks that we have implemented:
 2. Run `python3 ./evaluator/{task_name}.py` to start the pretraining where `{task_name}` is the task you wish to evaluate.
 
 ## Results
+Below are some of results we present in our paper, which has not yet been released.
 ### Text-Based Tasks
 <img width="536" alt="Screenshot 2024-01-17 at 16 30 26" src="https://github.com/MatthewS65537/M4/assets/136693480/096231e2-31ae-4b10-8a22-ac6066461040">
 <img width="410" alt="Screenshot 2024-01-17 at 16 30 50" src="https://github.com/MatthewS65537/M4/assets/136693480/d7d009db-2ef5-4716-8082-4278cc19e7ad">
@@ -89,6 +89,7 @@ Below is a list of the tasks that we have implemented:
 
 ### Demos
 #### EEG-Text Matching
+
 #### EEG-Image Matching
 #### EEG-Text Generation
 #### EEG-Image Generation
