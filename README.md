@@ -1,4 +1,4 @@
-# M4
+# DECODING BRAIN SIGNALS AND BEYOND WITH GENERATIVE AI: INTRODUCING M4 - A FRAMEWORK FOR META-ALIGNED MULTI-MODAL MULTI-TASK LEARNING
 ## Note
 ```diff
 - This repository is currently under development. All code is subject to final changes, and the author does not guarantee that the code is organized in any way, or immediately runnable.
@@ -83,7 +83,10 @@ Below are some of results we present in our paper, which has not yet been releas
 <img width="536" alt="Screenshot 2024-01-17 at 16 31 14" src="https://github.com/MatthewS65537/M4/assets/136693480/4734b38a-5829-46b9-bb93-be9593f6adba">
 
 ### Generative Results
+### Text Generation
 <img width="511" alt="Screenshot 2024-01-17 at 16 33 17" src="https://github.com/MatthewS65537/M4/assets/136693480/894e6a13-40ef-4dc1-bb51-92a953f94679">
+
+### Image Generation
 <img width="492" alt="Screenshot 2024-01-17 at 16 31 21" src="https://github.com/MatthewS65537/M4/assets/136693480/f07c2eca-7045-4645-a03e-8d7645abfaa0">
 
 
