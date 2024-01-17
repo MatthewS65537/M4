@@ -93,12 +93,10 @@ Below are some of results we present in our paper, which has not yet been releas
 
 #### EEG-Image Matching
 ![EIM-Demo-250](https://github.com/MatthewS65537/M4/assets/136693480/aba891eb-635d-405c-bf4d-39971e457f14)
-
 #### EEG-Text Generation
 #### EEG-Image Generation
 #### EEG-Sentiment Classification
 ![Sentiment-Classification-Demo-250](https://github.com/MatthewS65537/M4/assets/136693480/441a1549-f1f5-4cb8-8466-6d073542cb34)
-
 
 
 #### EEG-Image Classification
@@ -192,7 +190,7 @@ Below are some of results we present in our paper, which has not yet been releas
 
 
 ## Acknowledgements
-Some code from this repository has been borrowed from EEG-To-Text and (Pytorch Parallel? Check which repo/forum thread). A sincere thank you to their wonderful work.
+Some code from this repository has been borrowed from [EEG-To-Text](https://github.com/MikeWangWZHL/EEG-To-Text/tree/main) and thomwolf's [implementation](https://gist.github.com/thomwolf/7e2407fbd5945f07821adae3d9fd1312) of parallel optimizers and loss functions. A sincere thank you to their wonderful work.
 
 This research has been conducted while I was working a research internship at Carnegie Mellon University.
 The views and conclusions contained herein are mine and should not be interpreted necessarily as those
