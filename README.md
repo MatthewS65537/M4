@@ -107,17 +107,20 @@ Below is a list of the tasks that we have implemented:
 | EEG-Sentiment Classification | 117,459,971 |
 ### Hyperparameters
 #### $M^4$ Simple Round Robin
-|Epochs|Warmup (Pre-training Tasks)|N/A|
+|Epochs|||
 |---|---|---|
+||Warmup (Pre-training Tasks)|N/A|
 ||Pre-training|N/A|
 ||Training|50|
 
 #### $M^4$ DSG+
-|Epochs|Warmup (Pre-training Tasks)|15|
+|Epochs|Phase||
 |---|---|---|
+||Warmup (Pre-training Tasks)|15|
 ||Pre-training|35|
 ||Training|50|
-|LR Decay ($\gamma$)|ETM|N/A|
+|**LR Decay** ($\gamma$)|||
+||ETM|N/A|
 ||EIM|N/A|
 ||TEXT-GEN|0.5|
 ||IMG-GEN|0.5|
@@ -125,6 +128,20 @@ Below is a list of the tasks that we have implemented:
 ||IMG-CLASS|0.5|
 
 #### $M^4$ Layerwise
+|Epochs|Phase||
+|---|---|---|
+||Warmup (Pre-training Tasks)|10|
+||Pre-training|60|
+||Training|50|
+|**Pretrain LR Scaler**|||
+||1-10|Linear 0.2 \$to$ 1.0|
+||11-15|1.0|
+||16-25|0.2|
+||26-35|0.04|
+||36-40|0.8|
+||41-50|0.16|
+||51-60|0.03|
+||61-70|0.6|
 
 
 
