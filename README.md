@@ -52,12 +52,12 @@ The data of our code is preprocessed and can be loaded via the command `sh LoadI
 
 ## Task List
 Below is a list of the tasks that we have implemented:
-1. EEG-TEXT MATCHING
-2. EEG-IMAGE MATCHING
-3. EEG-TEXT GENERATION
-4. EEG-IMAGE GENERATION
-5. EEG-SENTIMENT CLASSIFICATION
-6. EEG-IMAGE CLASSIFICATION
+1. EEG-TEXT MATCHING (ETM, Pretrained)
+2. EEG-IMAGE MATCHING (EIM, Pretrained)
+3. EEG-TEXT GENERATION (TEXT-GEN)
+4. EEG-IMAGE GENERATION (IMG-GEN)
+5. EEG-SENTIMENT CLASSIFICATION (SENT-CLASS)
+6. EEG-IMAGE CLASSIFICATION (IMG-CLASS)
    
 ## Train
 ### With Pretrain
@@ -75,6 +75,7 @@ Below is a list of the tasks that we have implemented:
 ## Results
 ### Text-Based Tasks
 
+
 ### Image-Based Tasks
 
 ### Generative Results
@@ -86,6 +87,44 @@ Below is a list of the tasks that we have implemented:
 #### EEG-Image Generation
 #### EEG-Sentiment Classification
 #### EEG-Image Classification
+
+## Model Specifics
+### Parameter Counts
+#### Parameter Counts by Training Status
+| Type | Count |
+| - | - |
+| Trainable | 104,394,283 |
+| Pre-trained | 1,433,857,861 |
+| Total | 1,538,252,144 |
+#### Parameter Counts by Task
+| Task | Active Parameters |
+|---|---|
+| EEG-Text Matching | 107,747,072 |
+| EEG-Image Matching | 107,747,072 |
+| EEG-Text Generation | 521,778,688 |
+| EEG-Image Generation | 973,566,148 |
+| EEG-Image Classification | 112,470,528 |
+| EEG-Sentiment Classification | 117,459,971 |
+### Hyperparameters
+#### $M^4$ Simple Round Robin
+|Epochs|Warmup (Pre-training Tasks)|N/A|
+||Pre-training|N/A|
+||Training|50|
+
+#### $M^4$ DSG+
+|Epochs|Warmup (Pre-training Tasks)|15|
+||Pre-training|35|
+||Training|50|
+|LR Decay ($\gamma$)|ETM|N/A|
+||EIM|N/A|
+||TEXT-GEN|0.5|
+||IMG-GEN|0.5|
+||SENT-CLASS|0.5|
+||IMG-CLASS|0.5|
+
+#### $M^4$ Layerwise
+
+
 
 ## Acknowledgements
 Some code from this repository has been borrowed from EEG-To-Text and (Pytorch Parallel? Check which repo/forum thread). A sincere thank you to their wonderful work.
