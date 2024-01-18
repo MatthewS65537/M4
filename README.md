@@ -91,13 +91,18 @@ Below are some of results we present in our paper, which has not yet been releas
 
 
 ### Downstream Applications of Our Tasks
+These GIFs below are intended to illustrate how we hope our model to be used in the real world. It also showcases the real world applications of every one of our tasks.
 #### EEG-Text Matching
 ![ETM-Demo-250](https://github.com/MatthewS65537/M4/assets/136693480/6aa43c3b-9f1c-4f3d-b240-88faee1948b2)
 
 #### EEG-Image Matching
 ![EIM-Demo-250](https://github.com/MatthewS65537/M4/assets/136693480/aba891eb-635d-405c-bf4d-39971e457f14)
 #### EEG-Text Generation
+![Text-Gen-Demo-250](https://github.com/MatthewS65537/M4/assets/136693480/fcb14ffe-2667-4a62-9cda-70a9a2279ce9)
+
 #### EEG-Image Generation
+![Image-Gen-Demo-250](https://github.com/MatthewS65537/M4/assets/136693480/2dd87978-df06-4702-b47d-d63b3903fd3d)
+
 #### EEG-Sentiment Classification
 ![Sentiment-Classification-Demo-250](https://github.com/MatthewS65537/M4/assets/136693480/441a1549-f1f5-4cb8-8466-6d073542cb34)
 
