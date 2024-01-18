@@ -103,6 +103,8 @@ Below are some of results we present in our paper, which has not yet been releas
 
 
 #### EEG-Image Classification
+![Image-Classification-Demo-250](https://github.com/MatthewS65537/M4/assets/136693480/fcca0f33-5c2c-486a-9c77-5eb6437f1dd4)
+
 
 ## Model Specifics
 ### Parameter Counts
