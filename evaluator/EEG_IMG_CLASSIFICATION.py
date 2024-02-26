@@ -13,12 +13,24 @@ from load_data import *
 from data import *
 from dataloader import *
 from count_params import *
+import pickle
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 import numpy as np
+
+def calculate_topk_error(output, expected, k=1):
+
+    expected = torch.tensor(expected, device=output.device)
+    # tok-k idx
+    _, topk = output.topk(k, dim=1)
+    correct = topk.eq(expected.view(-1, 1).expand_as(topk))
+    error = 1 - correct.any(dim=1).float().mean().item()
+
+    return error
+
 
 def evaluate(args_dict, using_non_pytorch_parallel=False):
     dataloader = args_dict["dataloader"]
@@ -105,24 +117,57 @@ def evaluate(args_dict, using_non_pytorch_parallel=False):
         results[f"{phase}_loss"] = epoch_loss
         results[f"{phase}_confusion_matrix"] = confusion_matrix
         tp = np.array([confusion_matrix[i][i] for i in range(40)])
-        fp = np.array([confusion_matrix[i,:].sum() - confusion_matrix[i][i] for i in range(40)]) - tp
-        fn = np.array([confusion_matrix[:,i].sum() - confusion_matrix[i][i] for i in range(40)]) - tp
-        tn = np.array([tot_cnt - tp[i] - fp[i] - fn[i] for i in range(40)])
+        # 计算 FP 和 FN
+        fp = np.sum(confusion_matrix, axis=0) - tp  # 列的总和减去 TP
+        fn = np.sum(confusion_matrix, axis=1) - tp  # 行的总和减去 TP
+        # Calculate TN
+        # tn = np.zeros(40)
+        # for i in range(40):
+        #     temp_matrix = np.delete(confusion_matrix, i, 0)  # Delete row
+        #     temp_matrix = np.delete(temp_matrix, i, 1)      # Delete column
+        #     tn[i] = np.sum(temp_matrix)
+
+        # 计算整体指标（微平均和宏平均）
+        micro_avg_precision = tp.sum() / (tp.sum() + fp.sum())
+        micro_avg_recall = tp.sum() / (tp.sum() + fn.sum())
+        micro_avg_f1 = 2 * (micro_avg_precision * micro_avg_recall) / (micro_avg_precision + micro_avg_recall)
+
+        macro_avg_precision = precision.mean()
+        macro_avg_recall = recall.mean()
+        macro_avg_f1 = f1.mean()
+        
         results[f"{phase}_TP"] = tp
         results[f"{phase}_FP"] = fp
-        results[f"{phase}_TN"] = tn
+        # results[f"{phase}_TN"] = tn
         results[f"{phase}_FN"] = fn
-        results[f"{phase}_accuracy"] = accuracy = (tp + tn) / tot_cnt
         results[f"{phase}_precision"] = precision = tp / (tp + fp)
         results[f"{phase}_recall"] = recall = tp / (tp + fn)
-        results[f"{phase}_f1"] = f1 = 2 * precision * recall / (precision + recall)
+        results[f"{phase}_f1"] = f1 = 2 * (precision * recall) / (precision + recall)
+        results[f"{phase}_macro_avg_precision"] = macro_avg_precision
+        results[f"{phase}_macro_avg_recall"] = macro_avg_recall
+        results[f"{phase}_macro_avg_f1"] = macro_avg_f1
+        results[f"{phase}_micro_avg_precision"] = micro_avg_precision
+        results[f"{phase}_micro_avg_recall"] = micro_avg_recall
+        results[f"{phase}_micro_avg_f1"] = micro_avg_f1
+        # Top-K errors
+        top1_error = calculate_topk_error(output, expected, k=1)
+        top5_error = calculate_topk_error(output, expected, k=5)
+        top10_error = calculate_topk_error(output, expected, k=10)
+
+        # print Top-K
+        print(f"Top-1 Error: {top1_error}")
+        print(f"Top-5 Error: {top5_error}")
+        print(f"Top-10 Error: {top10_error}")
     return results
 
 if __name__ == "__main__":
-    CKPT_DIR = "./checkpoints/layerwise"
-    RESULTS_DIR = "./results/layerwise-dropout--0-5-FINAL"
-    MODEL_NAME = "MMMM_SENT-ONLY_FINAL-DROPOUT--0-5-FINAL"
-    
+    # CKPT_DIR = "./checkpoints/layerwise"
+    # RESULTS_DIR = "./results/layerwise-dropout--0-5-FINAL"
+    # MODEL_NAME = "MMMM_SENT-ONLY_FINAL-DROPOUT--0-5-FINAL"
+    CKPT_DIR = "./checkpoints/DSG"
+    RESULTS_DIR = "./tune_results/BART"
+    MODEL_NAME = "MMMM_FINAL"
+
     device="cuda"
     device_ids=[0,1,2,3]
     
@@ -155,5 +200,5 @@ if __name__ == "__main__":
     
     results = evaluate(args_dict)
     print(results)
-    with open(f"{RESULTS_DIR}/IMG_CLASSIFICATION_SRR.pkl", "wb") as f:
+    with open(f"{RESULTS_DIR}/IMG_CLASSIFICATION_DSG_pe.pkl", "wb") as f:
         pickle.dump(results, f)

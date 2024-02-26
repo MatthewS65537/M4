@@ -123,7 +123,7 @@ def evaluate(args_dict, image_save_path, using_non_pytorch_parallel=False):
             # statistics
 #             running_loss += loss.item() * bsz
             tot_cnt += bsz
-
+            print("Total number of {} images has processed. ".format(tot_cnt))
             current_data = dataloader[phase].load_data()
 
         epoch_loss = running_loss / tot_cnt
@@ -134,13 +134,17 @@ def evaluate(args_dict, image_save_path, using_non_pytorch_parallel=False):
         results[f"{phase}_latents"] = image_latents
         results[f"{phase}_PILs"] = image_PILs
         results[f"{phase}_cnt"] = tot_cnt
-        
+
     return results
 
 if __name__ == "__main__":
-    CKPT_DIR = "./checkpoints/Layerwise"
-    RESULTS_DIR = "./results/LayerwiseNOLORA"
-    MODEL_NAME = "MMMM_DIFFUSION-ONLY-NOLORA_FINAL"
+    # CKPT_DIR = "./checkpoints/Layerwise"
+    # RESULTS_DIR = "./results/LayerwiseNOLORA"
+    # MODEL_NAME = "MMMM_DIFFUSION-ONLY-NOLORA_FINAL"
+    CKPT_DIR = "./checkpoints/DSG"
+    RESULTS_DIR = "./results/DSG_pe_diffusion"
+    MODEL_NAME = "MMMM_FINAL"
+
     config = {
         "device" : "cuda",
         "device_ids" : [0,1,2,3]

@@ -92,26 +92,64 @@ def evaluate(args_dict, save_results_path = None):
             
             current_data = dataloader[phase].load_data()
         
-        confusion_matrix = np.array(confusion_matrix)
-        results[f"{phase}_confusion_matrix"] = confusion_matrix
-        tp = np.array([confusion_matrix[0][0], confusion_matrix[1][1], confusion_matrix[2][2]])
-        fp = np.array([confusion_matrix[1][0] + confusion_matrix[2][0],
-        confusion_matrix[0][1] + confusion_matrix[2][1],
-        confusion_matrix[0][2] + confusion_matrix[1][2]])
-        fn = np.array([confusion_matrix[0][1] + confusion_matrix[0][2],
-        confusion_matrix[1][0] + confusion_matrix[1][2],
-        confusion_matrix[2][0] + confusion_matrix[2][1]])
-        tn = np.array([confusion_matrix[1][1] + confusion_matrix[1][2] + confusion_matrix[2][1] + confusion_matrix[2][2],
-        confusion_matrix[0][0] + confusion_matrix[0][2] + confusion_matrix[2][0] + confusion_matrix[2][2],
-        confusion_matrix[0][0] + confusion_matrix[0][1] + confusion_matrix[1][0] + confusion_matrix[1][1]])
+        # confusion_matrix = np.array(confusion_matrix)
+        # results[f"{phase}_confusion_matrix"] = confusion_matrix
+        # tp = np.array([confusion_matrix[0][0], confusion_matrix[1][1], confusion_matrix[2][2]])
+        # fp = np.array([confusion_matrix[1][0] + confusion_matrix[2][0],
+        # confusion_matrix[0][1] + confusion_matrix[2][1],
+        # confusion_matrix[0][2] + confusion_matrix[1][2]])
+        # fn = np.array([confusion_matrix[0][1] + confusion_matrix[0][2],
+        # confusion_matrix[1][0] + confusion_matrix[1][2],
+        # confusion_matrix[2][0] + confusion_matrix[2][1]])
+        # tn = np.array([confusion_matrix[1][1] + confusion_matrix[1][2] + confusion_matrix[2][1] + confusion_matrix[2][2],
+        # confusion_matrix[0][0] + confusion_matrix[0][2] + confusion_matrix[2][0] + confusion_matrix[2][2],
+        # confusion_matrix[0][0] + confusion_matrix[0][1] + confusion_matrix[1][0] + confusion_matrix[1][1]])
+
+            
+        num_classes = 3  # Assuming there are 3 classes
+        confusion_matrix = np.zeros((num_classes, num_classes))
+
+        for i in range(len(sentiment_labels)):
+            true_label = sentiment_labels[i]
+            predicted_label = torch.argmax(output[i])
+            confusion_matrix[true_label][predicted_label] += 1
+
+        tp = np.diag(confusion_matrix)
+        fp = np.sum(confusion_matrix, axis=0) - tp
+        fn = np.sum(confusion_matrix, axis=1) - tp
+        # tn = np.sum(confusion_matrix) - (fp + fn + tp)
+
+        # 计算每个类别的precision, recall, accuracy, F1分数
+        precision = tp / (tp + fp)
+        recall = tp / (tp + fn)
+        # accuracy = (tp + tn) / (tp + fp + fn + tn)
+
+        f1 = 2 * (precision * recall) / (precision + recall)
+
+
+
+        # 计算整体指标（微平均和宏平均）
+        micro_avg_precision = tp.sum() / (tp.sum() + fp.sum())
+        micro_avg_recall = tp.sum() / (tp.sum() + fn.sum())
+        micro_avg_f1 = 2 * (micro_avg_precision * micro_avg_recall) / (micro_avg_precision + micro_avg_recall)
+
+        macro_avg_precision = precision.mean()
+        macro_avg_recall = recall.mean()
+        macro_avg_f1 = f1.mean()
+        
         results[f"{phase}_TP"] = tp
         results[f"{phase}_FP"] = fp
-        results[f"{phase}_TN"] = tn
+        # results[f"{phase}_TN"] = tn
         results[f"{phase}_FN"] = fn
-        results[f"{phase}_accuracy"] = accuracy = (tp + tn) / (tp + tn + fp + fn)
         results[f"{phase}_precision"] = precision = tp / (tp + fp)
         results[f"{phase}_recall"] = recall = tp / (tp + fn)
         results[f"{phase}_f1"] = f1 = 2 * (precision * recall) / (precision + recall)
+        results[f"{phase}_macro_avg_precision"] = macro_avg_precision
+        results[f"{phase}_macro_avg_recall"] = macro_avg_recall
+        results[f"{phase}_macro_avg_f1"] = macro_avg_f1
+        results[f"{phase}_micro_avg_precision"] = micro_avg_precision
+        results[f"{phase}_micro_avg_recall"] = micro_avg_recall
+        results[f"{phase}_micro_avg_f1"] = micro_avg_f1
     model.zero_grad()
     if not save_results_path == None:
         with open(save_results_path, "wb") as f:
@@ -119,10 +157,13 @@ def evaluate(args_dict, save_results_path = None):
     return results
 
 if __name__ == "__main__":
-    CKPT_DIR = "./checkpoints/layerwise"
-    RESULTS_DIR = "./results/Layerwise"
-    MODEL_NAME = "MMMM_BART+DIFFUSION+SENT_FINAL-3"
-    
+    # CKPT_DIR = "./checkpoints/layerwise"
+    # RESULTS_DIR = "./results/Layerwise"
+    # MODEL_NAME = "MMMM_BART+DIFFUSION+SENT_FINAL-3"
+    CKPT_DIR = "./checkpoints/layerwise_pe"
+    RESULTS_DIR = "./results/layerwise_pe"
+    MODEL_NAME = "MMMM_BART+SENT_FINAL"
+
     device="cuda"
     device_ids=[0,1,2,3]
     
@@ -151,5 +192,5 @@ if __name__ == "__main__":
         "model":model
     }
     
-    results = evaluate(args_dict, save_results_path=f"{RESULTS_DIR}/Sentiment_{MODEL_NAME}.pkl")
+    results = evaluate(args_dict, save_results_path=f"{RESULTS_DIR}/Sentiment_{MODEL_NAME}_pe.pkl")
     print(results)

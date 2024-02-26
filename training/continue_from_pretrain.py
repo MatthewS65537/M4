@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Import Pretrain Libraries (transformers + diffusers)
 from transformers import BartTokenizer
-from diffusers import AutoencoderKL
+from diffusers import AutoencoderKL, LMSDiscreteScheduler
 
 # Parallel Helper
 from parallel import DataParallelModel, DataParallelCriterion
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     print(f"[INFO] INITIALIZED MODEL.")
     model = nn.DataParallel(model, device_ids=device_ids).to(device,dtype=torch.float32)
     print(f"[INFO] WRAPPED MODEL IN nn.DataParallel().")
-    state_dict = torch.load(f"./checkpoints/Pretrain/MMMM_FINAL.pt")
+    state_dict = torch.load(f"./checkpoints/Pretrain_pe/MMMM_FINAL.pt")
     model.load_state_dict(state_dict)
     del state_dict
 #     print(f"[INFO] GRAD FREE PARAMETERS:")
@@ -215,7 +215,7 @@ if __name__ == "__main__":
     epoch = 0
     
     print(f"[INFO] STARTING TRAINING.")
-    while epoch < num_epochs:
+    while epoch <= num_epochs:
         print(f"Epoch {epoch}")
         start = time.time()
         torch.cuda.empty_cache()
@@ -299,7 +299,8 @@ if __name__ == "__main__":
                     "device_ids" : device_ids,
                     "staging_device" : staging_device,
                     "vae" : vae,
-                    "bsz" : 64
+                    "bsz" : 32,
+                    "noise_scheduler": LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", num_train_timesteps=1000)
 #                     "latent_dict" : latent_dict
                 }
                 results = EEG_IMG_DIFFUSION.train(args_dict, using_non_pytorch_parallel=use_non_pytorch_parallel)

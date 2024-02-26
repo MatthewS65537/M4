@@ -312,7 +312,9 @@ if __name__ == "__main__":
 #             torch.cuda.empty_cache()
             
         print(f"TOT TIME: {time.time() - epc_start:.2f} SECONDS")
-        if (epoch + 1) % 5 == 0:
-            torch.save(model.state_dict(), f"./checkpoints/PretrainFinal2/MMMM_{epoch}.pt")
+        if (epoch + 1) % 5 == 0 or epoch == 0:
+            torch.save(model.state_dict(), f"./checkpoints/Pretrain_pe/MMMM_{epoch}.pt")
+            print('*** checkpoint saved ***')
         epoch += 1
-    torch.save(model.state_dict(), f"./checkpoints/PretrainFinal2/MMMM_FINAL.pt")
+        
+    torch.save(model.state_dict(), f"./checkpoints/Pretrain_pe/MMMM_FINAL.pt") 
