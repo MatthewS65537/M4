@@ -23,8 +23,8 @@ from nltk.translate.bleu_score import sentence_bleu, corpus_bleu
 from rouge import Rouge
 
 
-def evaluate(args_dict, output_all_results_path = './Results/MMMM_EEG-TEXT-BART/all_decoding_results.txt', device_ids=None):
-    dataloader, device, tokenizer, criterion, model = args_dict["dataloader"], args_dict["device"], args_dict["tokenizer"], args_dict["criterion"], args_dict["model"]
+def evaluate(args_dict, output_all_results_path = './Results/MMMM_EEG-TEXT-BART/pe_text_decoding_results.txt', device_ids=None):
+    dataloader, device, tokenizer, criterion, model, decoder = args_dict["dataloader"], args_dict["device"], args_dict["tokenizer"], args_dict["criterion"], args_dict["model"], args_dict["decoder"]
     staging_device = f"cuda:{device_ids[0]}" if device_ids == None else "cuda"
     model.eval()
     
@@ -67,6 +67,8 @@ def evaluate(args_dict, output_all_results_path = './Results/MMMM_EEG-TEXT-BART/
                 "pool_result" : False
                 }
             
+            # predictions = model.generate("EEG-TEXT-BART", decoder, args_dict, staging_device="cuda:0")
+
             seq2seqLMoutput = model(
                 mode="EEG-TEXT-BART",
                 args_dict=args_dict,
@@ -125,9 +127,12 @@ def evaluate(args_dict, output_all_results_path = './Results/MMMM_EEG-TEXT-BART/
 
 
 if __name__ == '__main__': 
-    CKPT_DIR = "./tune_checkpoints/"
-    RESULTS_DIR = "./tune_results/BART"
-    MODEL_NAME = "BEST-BART"
+    # CKPT_DIR = "./tune_checkpoints/"
+    # RESULTS_DIR = "./tune_results/BART"
+    # MODEL_NAME = "BEST-BART"
+    CKPT_DIR = "./checkpoints/layerwise_pe"
+    RESULTS_DIR = "./results/layerwise_pe"
+    MODEL_NAME = "MMMM_BART_FINAL"
     
     device="cuda"
     device_ids=[0,1,2,3]
@@ -147,7 +152,7 @@ if __name__ == '__main__':
     print("[INFO] Intialized dataloaders.")
     
     tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
-    
+    decoder = BartForConditionalGeneration.from_pretrained('facebook/bart-large')
     criterion = nn.CrossEntropyLoss()
     
     args_dict = {
@@ -155,7 +160,8 @@ if __name__ == '__main__':
         "device":device,
         "tokenizer":tokenizer,
         "criterion":criterion,
-        "model":model
+        "model":model,
+        "decoder": decoder
     }
     
     ''' eval '''

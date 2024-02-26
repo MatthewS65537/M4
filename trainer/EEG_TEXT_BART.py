@@ -11,6 +11,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
     device = args_dict["device"] if "device" in args_dict else "cuda"
     device_ids = args_dict["device_ids"] if "device_ids" in args_dict else None
     staging_device = args_dict["staging_device"] if "staging_device" in args_dict else None
+    pref_dtype = args_dict["pref_dtype"] if "pref_dtype" in args_dict else torch.float32
 
     if staging_device==None:
         staging_device = f"cuda:{device_ids[0]}" if device_ids == None else "cuda"
@@ -40,9 +41,9 @@ def train(args_dict, using_non_pytorch_parallel=False):
             optimizer.zero_grad()
 
             args_dict = {
-                "input_data_batch" : input_embeddings_batch.to(staging_device, dtype=torch.float32),
-                "input_masks_batch" : input_masks_batch.to(staging_device, dtype=torch.float32),
-                "input_masks_invert" : input_mask_invert_batch.to(staging_device, dtype=torch.float32),
+                "input_data_batch" : input_embeddings_batch.to(staging_device, dtype=pref_dtype),
+                "input_masks_batch" : input_masks_batch.to(staging_device, dtype=pref_dtype),
+                "input_masks_invert" : input_mask_invert_batch.to(staging_device, dtype=pref_dtype),
                 "target_ids_batch" : target_ids_batch.to(staging_device),
                 "pool_result" : False
                 }
@@ -67,6 +68,7 @@ def train(args_dict, using_non_pytorch_parallel=False):
                 loss /= len(seq2seqLMoutput)
             else:
                 loss = seq2seqLMoutput.loss
+            loss.to(dtype=torch.float32)
             
             # Backward + Optimize only if in training phase
             if phase == 'train':

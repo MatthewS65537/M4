@@ -186,3 +186,18 @@ class MMMM(nn.Module):
             return out
         else:
             print(f"Mode {mode} not found")
+
+    @torch.no_grad()
+    def generate(
+            self,
+            mode, decoder,args_dict, meta=False, staging_device="cuda:0"
+    ):
+        if mode == "EEG-TEXT-BART": 
+            encoded_embedding=self.eeg_encoder("EEG-TEXT-BART", args_dict, staging_device)
+            output=decoder.generate(
+                inputs_embeds = encoded_embedding,
+                attention_mask = args_dict['input_masks_batch'][:,:encoded_embedding.shape[1]],
+                labels = args_dict['target_ids_batch'],
+                return_dict = True)
+
+            return output

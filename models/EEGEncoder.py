@@ -6,7 +6,7 @@ import sys
 sys.path.append("./models")
 
 from FCN import *
-
+from PositionalEncoder import PositionalEncoder
 # Main EEGEncoder() Class
 class EEGEncoder(nn.Module):
     """
@@ -22,8 +22,9 @@ class EEGEncoder(nn.Module):
         device_ids (list): List of device IDs for multi-GPU training (default: None).
     """
 
-    def __init__(self, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8, device=None, device_ids=None, dtype=torch.float32):
+    def __init__(self, enc_feat=1024, dec_emb_sz=768, enc_nhead=8, enc_dim_ff=2048, num_enc_layers=8, device=None, device_ids=None, dtype=torch.float32, pos_emb = True):
         super(EEGEncoder, self).__init__()
+
         self.device = device
         self.heads = nn.ModuleDict()
         self.encoder_layer = nn.TransformerEncoderLayer(d_model=enc_feat, nhead=enc_nhead, dim_feedforward=enc_dim_ff, batch_first=True).to(dtype=dtype)
@@ -32,9 +33,15 @@ class EEGEncoder(nn.Module):
         self.device_ids = device_ids
         self.dtype = dtype
         self.device = device
+        self.pos_emb = pos_emb
+        if self.pos_emb:
+            self.pos_encoder = PositionalEncoder(dim=enc_feat, dropout=0.1, max_len=5000).to(dtype=dtype)
         if not device == None:
             self.to(device)
+
         self.to(dtype=dtype)
+
+        
         
     def add_head(self, name, head):
         """
@@ -65,6 +72,9 @@ class EEGEncoder(nn.Module):
             if debug:
                 print("ENCODER HEAD GOOD")
             encoded_embedding = self.encoder(encoded_embedding, src_key_padding_mask=input_masks_invert)
+            if self.pos_emb:
+                input_masks = args_dict["input_masks_batch"]
+                encoded_embedding = self.pos_encoder(encoded_embedding, mask=input_masks)
             if debug:
                 print("ENCODER ENCODER GOOD")
             encoded_embedding = self.fc_proj(encoded_embedding)
@@ -81,6 +91,9 @@ class EEGEncoder(nn.Module):
             input_masks_invert = args_dict["input_masks_invert"]
             encoded_embedding = self.heads[mode](input_data_batch)
             encoded_embedding = self.encoder(encoded_embedding, src_key_padding_mask=input_masks_invert)
+            if self.pos_emb:
+                input_masks = args_dict["input_masks_batch"]
+                encoded_embedding = self.pos_encoder(encoded_embedding, mask=input_masks)
             encoded_embedding = self.fc_proj(encoded_embedding)
 #             encoded_embedding = F.gelu(encoded_embedding)
             pool_result = args_dict["pool_result"]

@@ -88,7 +88,7 @@ def train_layer(model, param_dict, args_dict, dataset_dict, writers):
         scheduler1.step()
         scheduler2.step()
         if (epoch + 1) % 5 == 0:
-            torch.save(model.state_dict(), f"./checkpoints/Layerwise/MMMM_DIFFUSION-ONLY-NOLORA_{epoch}.pt")
+            torch.save(model.state_dict(), f"./checkpoints/Layerwise/MMMM_DIFFUSION-ONLY-NOLORA_{epoch}_pe.pt")
         
     return results
 
@@ -122,7 +122,8 @@ if __name__ == "__main__":
         model = DataParallelModel(model, device_ids=device_ids).to(device)
     else:
         model = nn.DataParallel(model, device_ids=device_ids).to(device)
-    state_dict = torch.load(f"./tune_checkpoints/BEST-BART.pt")
+    # state_dict = torch.load(f"./tune_checkpoints/BEST-BART.pt")
+    state_dict = torch.load(f"./checkpoints/Pretrain_pe/MMMM_FINAL.pt")
     model.load_state_dict(state_dict, strict=False)
 
     for name, param in model.named_parameters():
@@ -182,4 +183,4 @@ if __name__ == "__main__":
     writers = {"train" : train_writer, "dev" : dev_writer}
     results = train_layer(model, param_dict, args_dict, dataset_dict, writers)
     model = results["model"]
-    torch.save(model.state_dict(), "./checkpoints/Layerwise/MMMM_DIFFUSION-ONLY-NOLORA_FINAL.pt")
+    torch.save(model.state_dict(), "./checkpoints/Layerwise/MMMM_DIFFUSION-ONLY-NOLORA_FINAL_pe.pt")
