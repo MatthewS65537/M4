@@ -127,14 +127,7 @@ def evaluate(args_dict, using_non_pytorch_parallel=False):
         #     temp_matrix = np.delete(temp_matrix, i, 1)      # Delete column
         #     tn[i] = np.sum(temp_matrix)
 
-        # 计算整体指标（微平均和宏平均）
-        micro_avg_precision = tp.sum() / (tp.sum() + fp.sum())
-        micro_avg_recall = tp.sum() / (tp.sum() + fn.sum())
-        micro_avg_f1 = 2 * (micro_avg_precision * micro_avg_recall) / (micro_avg_precision + micro_avg_recall)
 
-        macro_avg_precision = precision.mean()
-        macro_avg_recall = recall.mean()
-        macro_avg_f1 = f1.mean()
         
         results[f"{phase}_TP"] = tp
         results[f"{phase}_FP"] = fp
@@ -143,6 +136,14 @@ def evaluate(args_dict, using_non_pytorch_parallel=False):
         results[f"{phase}_precision"] = precision = tp / (tp + fp)
         results[f"{phase}_recall"] = recall = tp / (tp + fn)
         results[f"{phase}_f1"] = f1 = 2 * (precision * recall) / (precision + recall)
+                # 计算整体指标（微平均和宏平均）
+        micro_avg_precision = tp.sum() / (tp.sum() + fp.sum())
+        micro_avg_recall = tp.sum() / (tp.sum() + fn.sum())
+        micro_avg_f1 = 2 * (micro_avg_precision * micro_avg_recall) / (micro_avg_precision + micro_avg_recall)
+
+        macro_avg_precision = precision.mean()
+        macro_avg_recall = recall.mean()
+        macro_avg_f1 = f1.mean()
         results[f"{phase}_macro_avg_precision"] = macro_avg_precision
         results[f"{phase}_macro_avg_recall"] = macro_avg_recall
         results[f"{phase}_macro_avg_f1"] = macro_avg_f1
@@ -161,12 +162,12 @@ def evaluate(args_dict, using_non_pytorch_parallel=False):
     return results
 
 if __name__ == "__main__":
-    # CKPT_DIR = "./checkpoints/layerwise"
-    # RESULTS_DIR = "./results/layerwise-dropout--0-5-FINAL"
-    # MODEL_NAME = "MMMM_SENT-ONLY_FINAL-DROPOUT--0-5-FINAL"
-    CKPT_DIR = "./checkpoints/DSG"
-    RESULTS_DIR = "./tune_results/BART"
-    MODEL_NAME = "MMMM_FINAL"
+    # CKPT_DIR = "./checkpoints/layerwise_pe"
+    # RESULTS_DIR = "./results/layerwise_pe"
+    # MODEL_NAME = "MMMM_ALL_FINAL"
+    CKPT_DIR = "./checkpoints/DSG/"
+    RESULTS_DIR = "./results/ablation"
+    MODEL_NAME = "DSG_imgcls+diff_FINAL"
 
     device="cuda"
     device_ids=[0,1,2,3]
@@ -200,5 +201,5 @@ if __name__ == "__main__":
     
     results = evaluate(args_dict)
     print(results)
-    with open(f"{RESULTS_DIR}/IMG_CLASSIFICATION_DSG_pe.pkl", "wb") as f:
-        pickle.dump(results, f)
+    # with open(f"{RESULTS_DIR}/IMG_CLASSIFICATION_layerwise_pe.pkl", "wb") as f:
+    #     pickle.dump(results, f)

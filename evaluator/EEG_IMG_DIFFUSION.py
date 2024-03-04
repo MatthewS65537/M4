@@ -142,8 +142,8 @@ if __name__ == "__main__":
     # RESULTS_DIR = "./results/LayerwiseNOLORA"
     # MODEL_NAME = "MMMM_DIFFUSION-ONLY-NOLORA_FINAL"
     CKPT_DIR = "./checkpoints/DSG"
-    RESULTS_DIR = "./results/DSG_pe_diffusion"
-    MODEL_NAME = "MMMM_FINAL"
+    RESULTS_DIR = "./results/layerwise_pe_diffusion"
+    MODEL_NAME = "DSG_imgcls+diff_FINAL"
 
     config = {
         "device" : "cuda",
@@ -197,6 +197,6 @@ if __name__ == "__main__":
         "bsz" : 1
     }
     results = evaluate(args_dict, image_save_path=f"{RESULTS_DIR}/diffusion_images")
-    import pickle
-    with open(f"{RESULTS_DIR}/diffusion_results.pkl", "wb") as f:
-        pickle.dump(results, f)
+    # import pickle
+    # with open(f"{RESULTS_DIR}/diffusion_results.pkl", "wb") as f:
+    #     pickle.dump(results, f)

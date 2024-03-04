@@ -121,9 +121,9 @@ if __name__ == "__main__":
     # RESULTS_DIR = "./results/PretrainFinal2"
     # MODEL_NAME = "MMMM_39"
     
-    CKPT_DIR = "./checkpoints/Pretrain_pe"
-    RESULTS_DIR = "./results/PretrainFinal2"
-    MODEL_NAME = "MMMM_FINAL"
+    CKPT_DIR = "./checkpoints/layerwise_pe"
+    RESULTS_DIR = "./results/ablation"
+    MODEL_NAME = "MMMM_ALL_FINAL"
 
     device="cuda"
     device_ids=[0,1,2,3]
@@ -162,5 +162,5 @@ if __name__ == "__main__":
         results[dev_bsz] = evaluate(args_dict)
         print(results[dev_bsz])
     import pickle
-    with open(f"{RESULTS_DIR}/ETM_SRR-{MODEL_NAME}_pe.pkl", "wb") as f:
-        pickle.dump(results, f)
+    # with open(f"{RESULTS_DIR}/ETM_SRR-{MODEL_NAME}_pe.pkl", "wb") as f:
+    #     pickle.dump(results, f)

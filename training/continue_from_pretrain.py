@@ -69,7 +69,7 @@ if __name__ == "__main__":
     print(f"[INFO] INITIALIZED MODEL.")
     model = nn.DataParallel(model, device_ids=device_ids).to(device,dtype=torch.float32)
     print(f"[INFO] WRAPPED MODEL IN nn.DataParallel().")
-    state_dict = torch.load(f"./checkpoints/Pretrain_pe/MMMM_FINAL.pt")
+    state_dict = torch.load(f"./checkpoints/DSG/pretrain_only_FINAL.pt")
     model.load_state_dict(state_dict)
     del state_dict
 #     print(f"[INFO] GRAD FREE PARAMETERS:")
@@ -155,18 +155,18 @@ if __name__ == "__main__":
 #         )
 #     )
 
-    dsg_tasks.add_task(
-        DSGTask(
-            task_name="EEG-TEXT-BART",
-            dataset_tag="ZuCo-BART",
-            criterion=nn.CrossEntropyLoss(), # Will use BART's own loss function (should also be CE Loss)
-            optimizer=optim.Adam,
-            learning_rate=5e-5,
-            converge_lim=2,
-            converge_threshold=0.005,
-            div_threshold=0.005
-            )
-        )
+    # dsg_tasks.add_task(
+    #     DSGTask(
+    #         task_name="EEG-TEXT-BART",
+    #         dataset_tag="ZuCo-BART",
+    #         criterion=nn.CrossEntropyLoss(), # Will use BART's own loss function (should also be CE Loss)
+    #         optimizer=optim.Adam,
+    #         learning_rate=5e-5,
+    #         converge_lim=2,
+    #         converge_threshold=0.005,
+    #         div_threshold=0.005
+    #         )
+    #     )
 
     dsg_tasks.add_task(
         DSGTask(
@@ -194,18 +194,18 @@ if __name__ == "__main__":
             )
         )
 
-    dsg_tasks.add_task(
-        DSGTask(
-            task_name="EEG-TEXT-BART-SENTIMENT",
-            dataset_tag="ZuCo-BART",
-            criterion=nn.CrossEntropyLoss(), # CE Loss for Tenary Sentiment
-            optimizer=optim.Adam,
-            learning_rate=5e-5,
-            converge_lim=2,
-            converge_threshold=0.005,
-            div_threshold=0.005
-            )
-        )
+    # dsg_tasks.add_task(
+    #     DSGTask(
+    #         task_name="EEG-TEXT-BART-SENTIMENT",
+    #         dataset_tag="ZuCo-BART",
+    #         criterion=nn.CrossEntropyLoss(), # CE Loss for Tenary Sentiment
+    #         optimizer=optim.Adam,
+    #         learning_rate=5e-5,
+    #         converge_lim=2,
+    #         converge_threshold=0.005,
+    #         div_threshold=0.005
+    #         )
+    #     )
     
     print(f"[INFO] FINISHED SETTING UP TRAINING TASKS.")
     
@@ -341,6 +341,6 @@ if __name__ == "__main__":
             print("CONVERGENCE ACHEIVED ON ALL TASKS")
             
         epoch += 1
-        if epoch % 10 == 0:
-            torch.save(model.state_dict(), f"./checkpoints/DSG/MMMM_{epoch}.pt")
-    torch.save(model.state_dict(), f"./checkpoints/DSG/MMMM_FINAL.pt")
+        # if epoch % 10 == 0 or epoch == 0:
+        #     torch.save(model.state_dict(), f"./checkpoints/DSG/DSG_imgcls_only_{epoch}.pt")
+    torch.save(model.state_dict(), f"./checkpoints/DSG/DSG_imgcls+diff_FINAL.pt")

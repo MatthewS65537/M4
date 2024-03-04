@@ -130,9 +130,9 @@ if __name__ == '__main__':
     # CKPT_DIR = "./tune_checkpoints/"
     # RESULTS_DIR = "./tune_results/BART"
     # MODEL_NAME = "BEST-BART"
-    CKPT_DIR = "./checkpoints/layerwise_pe"
-    RESULTS_DIR = "./results/layerwise_pe"
-    MODEL_NAME = "MMMM_BART_FINAL"
+    CKPT_DIR = "./checkpoints/DSG/"
+    RESULTS_DIR = "./results/ablation"
+    MODEL_NAME = "DSG_imgcls+diff_FINAL"
     
     device="cuda"
     device_ids=[0,1,2,3]
@@ -165,4 +165,4 @@ if __name__ == '__main__':
     }
     
     ''' eval '''
-    evaluate(args_dict, output_all_results_path=f"{RESULTS_DIR}/all_decoding_results.txt", device_ids=device_ids)
+    evaluate(args_dict, output_all_results_path=f"{RESULTS_DIR}/DSG_imgcls+diff_decoding_results.txt", device_ids=device_ids)
