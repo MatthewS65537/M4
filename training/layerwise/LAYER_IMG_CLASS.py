@@ -69,7 +69,7 @@ if __name__ == "__main__":
     print(f"[INFO] INITIALIZED MODEL.")
     model = nn.DataParallel(model, device_ids=device_ids).to(device,dtype=torch.float32)
     print(f"[INFO] WRAPPED MODEL IN nn.DataParallel().")
-    state_dict = torch.load(f"./tune_checkpoints/BEST-BART.pt")
+    state_dict = torch.load(f"./checkpoints/layerwise_pe/MMMM_BART+sent+diffusion_FINAL.pt")
 #     model_state_dict = model.state_dict()
 #     for x in model_state_dict:
 #         state_dict[x] = model_state_dict[x]
@@ -213,5 +213,5 @@ if __name__ == "__main__":
             
         epoch += 1
         if (epoch + 1) % 5 == 0:
-            torch.save(model.state_dict(), f"./checkpoints/layerwise/MMMM_SENT-ONLY_{epoch}-DROPOUT--0-5-FINAL.pt")
-    torch.save(model.state_dict(), f"./checkpoints/layerwise/MMMM_SENT-ONLY_FINAL-DROPOUT--0-5-FINAL.pt")
+            torch.save(model.state_dict(), f"./checkpoints/layerwise_pe/MMMM_ALL_{epoch}.pt")
+    torch.save(model.state_dict(), f"./checkpoints/layerwise_pe/MMMM_ALL_FINAL.pt")

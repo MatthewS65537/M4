@@ -88,7 +88,7 @@ def train_layer(model, param_dict, args_dict, dataset_dict, writers):
         scheduler1.step()
         scheduler2.step()
         if (epoch + 1) % 5 == 0:
-            torch.save(model.state_dict(), f"./checkpoints/Layerwise/MMMM_DIFFUSION-ONLY-NOLORA_{epoch}_pe.pt")
+            torch.save(model.state_dict(), f"./checkpoints/layerwise_pe/MMMM_diffusion_only_{epoch}.pt")
         
     return results
 
@@ -183,4 +183,4 @@ if __name__ == "__main__":
     writers = {"train" : train_writer, "dev" : dev_writer}
     results = train_layer(model, param_dict, args_dict, dataset_dict, writers)
     model = results["model"]
-    torch.save(model.state_dict(), "./checkpoints/Layerwise/MMMM_DIFFUSION-ONLY-NOLORA_FINAL_pe.pt")
+    torch.save(model.state_dict(), "./checkpoints/layerwise_pe/MMMM_diffusion_only_FINAL.pt")

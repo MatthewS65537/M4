@@ -122,9 +122,9 @@ if __name__ == "__main__":
     # RESULTS_DIR = "./results/PretrainFinal2"
     # MODEL_NAME = "MMMM_39"
     
-    CKPT_DIR = "./checkpoints/Pretrain_pe"
-    RESULTS_DIR = "./results/PretrainFinal2"
-    MODEL_NAME = "MMMM_FINAL"
+    CKPT_DIR = "./checkpoints/DSG"
+    RESULTS_DIR = "./results/ablation"
+    MODEL_NAME = "DSG_all_FINAL"
 
     
     device="cuda"
@@ -164,6 +164,6 @@ if __name__ == "__main__":
         args_dict["bsz"] = dev_bsz
         results[dev_bsz] = evaluate(args_dict)
         print(results[dev_bsz])
-    import pickle
-    with open(f"{RESULTS_DIR}/EIM_SRR_{MODEL_NAME}_pe.pkl", "wb") as f:
-        pickle.dump(results, f)
+    # import pickle
+    # with open(f"{RESULTS_DIR}/EIM_SRR_{MODEL_NAME}_pe.pkl", "wb") as f:
+    #     pickle.dump(results, f)

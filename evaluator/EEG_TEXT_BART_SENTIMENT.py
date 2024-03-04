@@ -35,7 +35,9 @@ def evaluate(args_dict, save_results_path = None):
         staging_device = f"cuda:{device_ids[0]}" if not device_ids == None else "cuda"
     results = {}
     for phase in ['test']:
-        confusion_matrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        # confusion_matrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        num_classes = 3  #there are 3 classes
+        confusion_matrix = np.zeros((num_classes, num_classes))
         model.eval()     # Set model to evaluate mode
 
         # Iterate over data.
@@ -87,8 +89,12 @@ def evaluate(args_dict, save_results_path = None):
                 staging_device=staging_device
                 )
             
+            # for i in range(input_embeddings.shape[0]):
+            #     confusion_matrix[sentiment_labels[i]][torch.argmax(output[i])] += 1
             for i in range(input_embeddings.shape[0]):
-                confusion_matrix[sentiment_labels[i]][torch.argmax(output[i])] += 1
+                true_label = sentiment_labels[i]
+                predicted_label = torch.argmax(output[i])
+                confusion_matrix[true_label][predicted_label] += 1
             
             current_data = dataloader[phase].load_data()
         
@@ -105,19 +111,12 @@ def evaluate(args_dict, save_results_path = None):
         # confusion_matrix[0][0] + confusion_matrix[0][2] + confusion_matrix[2][0] + confusion_matrix[2][2],
         # confusion_matrix[0][0] + confusion_matrix[0][1] + confusion_matrix[1][0] + confusion_matrix[1][1]])
 
-            
-        num_classes = 3  # Assuming there are 3 classes
-        confusion_matrix = np.zeros((num_classes, num_classes))
 
-        for i in range(len(sentiment_labels)):
-            true_label = sentiment_labels[i]
-            predicted_label = torch.argmax(output[i])
-            confusion_matrix[true_label][predicted_label] += 1
 
         tp = np.diag(confusion_matrix)
         fp = np.sum(confusion_matrix, axis=0) - tp
         fn = np.sum(confusion_matrix, axis=1) - tp
-        # tn = np.sum(confusion_matrix) - (fp + fn + tp)
+#         tn = np.sum(confusion_matrix) - (fp + fn + tp)
 
         # 计算每个类别的precision, recall, accuracy, F1分数
         precision = tp / (tp + fp)
@@ -162,7 +161,7 @@ if __name__ == "__main__":
     # MODEL_NAME = "MMMM_BART+DIFFUSION+SENT_FINAL-3"
     CKPT_DIR = "./checkpoints/layerwise_pe"
     RESULTS_DIR = "./results/layerwise_pe"
-    MODEL_NAME = "MMMM_BART+SENT_FINAL"
+    MODEL_NAME = "MMMM_ALL_FINAL"
 
     device="cuda"
     device_ids=[0,1,2,3]
