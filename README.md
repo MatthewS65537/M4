@@ -1,4 +1,7 @@
 # DECODING BRAIN SIGNALS AND BEYOND WITH GENERATIVE AI: INTRODUCING M4 - A FRAMEWORK FOR META-ALIGNED MULTI-MODAL MULTI-TASK LEARNING
+
+# IMPORTANT UPDATE: THIS REPO WAS BUILT UPON OPEN SOURCE CODE WHICH WAS PROVEN TO HAVE UNDERLYING ISSUES (see ![here](https://github.com/MikeWangWZHL/EEG-To-Text)). PLEASE EXERCISE CAUTION WHEN USING THE CODE HERE. FOR THIS REASON, THIS REPOSITORY WILL NOW BE ARCHIVED.
+
 ## Note
 ```diff
 - This repository is currently under development. All code is subject to final changes, and the author does not guarantee that the code is organized in any way, or immediately runnable.
